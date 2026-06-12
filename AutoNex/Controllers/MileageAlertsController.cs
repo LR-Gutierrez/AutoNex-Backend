@@ -1,4 +1,5 @@
 using AutoNex.DTOs.MileageAlerts;
+using AutoNex.DTOs.Notifications;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,12 @@ namespace AutoNex.Controllers;
 public class MileageAlertsController : ControllerBase
 {
     private readonly IMileageAlertService _mileageAlertService;
+    private readonly INotificationService _notificationService;
 
-    public MileageAlertsController(IMileageAlertService mileageAlertService)
+    public MileageAlertsController(IMileageAlertService mileageAlertService, INotificationService notificationService)
     {
         _mileageAlertService = mileageAlertService;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -73,17 +76,17 @@ public class MileageAlertsController : ControllerBase
     [HttpPost("{id}/send")]
     public async Task<IActionResult> SendReminder(int id)
     {
-        var alert = await _mileageAlertService.GetByIdAsync(id);
-        if (alert is null)
-            return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
-
-        return Ok(ApiResponse<object>.Ok(new
+        try
         {
-            alert.Id,
-            alert.VehicleInfo,
-            message = $"Recordatorio: El vehículo {alert.VehicleInfo} requiere atención. " +
-                      $"Kilometraje alerta: {alert.NextAlertKm} km. " +
-                      "(Envío real se integrará en Fase 6 - Notificaciones)"
-        }, "Recordatorio generado"));
+            var notification = await _notificationService.SendReminderAsync(id);
+            if (notification is null)
+                return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
+
+            return Ok(ApiResponse<NotificationResponse>.Ok(notification, "Recordatorio enviado exitosamente"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

@@ -501,6 +501,63 @@ Registros agrupados por categoría, ordenados por monto descendente.
 
 ---
 
+## Notificaciones
+
+### `GET /api/notifications`
+Historial de notificaciones enviadas.
+
+**Query Parameters:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `clientId` | int? | Filtrar por cliente |
+| `vehicleId` | int? | Filtrar por vehículo |
+| `status` | string? | `Pending`, `Sent` o `Failed` |
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "clientId": 1,
+      "clientName": "Juan Pérez",
+      "vehicleId": 1,
+      "vehicleInfo": "Toyota Corolla (ABC123)",
+      "type": "WhatsApp",
+      "recipient": "+521234567890",
+      "message": "Recordatorio: El vehículo Toyota Corolla (ABC123) requiere atención...",
+      "sentAt": "2026-06-11T12:00:00Z",
+      "status": "Sent",
+      "createdAt": "2026-06-11T12:00:00Z"
+    }
+  ],
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+### `GET /api/notifications/{id}`
+Obtiene una notificación por ID.
+
+### `POST /api/notifications/send-whatsapp`
+Envía una notificación manual por WhatsApp.
+
+**Request:**
+```json
+{
+  "clientId": 1,
+  "vehicleId": 1,
+  "type": "WhatsApp",
+  "recipient": "+521234567890",
+  "message": "Recordatorio: Su vehículo requiere mantenimiento."
+}
+```
+
+### `POST /api/mileage-alerts/{id}/send`
+Envía un recordatorio automático desde una alerta de kilometraje. Obtiene el teléfono del cliente y arma el mensaje automáticamente.
+
+---
+
 ## Formato de respuesta estándar
 
 **Éxito:**

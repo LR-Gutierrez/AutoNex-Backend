@@ -2,6 +2,7 @@ using AutoNex.DTOs.Clients;
 using AutoNex.DTOs.Consumables;
 using AutoNex.DTOs.FinancialRecords;
 using AutoNex.DTOs.MileageAlerts;
+using AutoNex.DTOs.Notifications;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.DTOs.Tools;
@@ -102,6 +103,27 @@ public static class MappingExtensions
             variant.IsActive,
             variant.CreatedAt
         );
+
+    public static NotificationResponse ToResponse(this Notification notification)
+    {
+        var vehicleInfo = notification.Vehicle is not null
+            ? $"{notification.Vehicle.Brand} {notification.Vehicle.Model} ({notification.Vehicle.LicensePlate})"
+            : null;
+
+        return new NotificationResponse(
+            notification.Id,
+            notification.ClientId,
+            notification.Client.FullName,
+            notification.VehicleId,
+            vehicleInfo,
+            notification.Type,
+            notification.Recipient,
+            notification.Message,
+            notification.SentAt,
+            notification.Status,
+            notification.CreatedAt
+        );
+    }
 
     public static FinancialRecordResponse ToResponse(this FinancialRecord record)
         => new(

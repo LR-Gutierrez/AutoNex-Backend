@@ -47,6 +47,10 @@ builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
 builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
 builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
+builder.Services.AddScoped<ITwilioService, TwilioService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
