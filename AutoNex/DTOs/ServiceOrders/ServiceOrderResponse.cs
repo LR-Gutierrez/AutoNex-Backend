@@ -23,6 +23,8 @@ public record ServiceOrderItemResponse(
     int Id,
     int ServiceId,
     string ServiceName,
+    int? ServiceVariantId,
+    string? ServiceVariantName,
     int? ConsumableId,
     string? ConsumableName,
     int Quantity,

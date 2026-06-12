@@ -6,7 +6,10 @@ public class Service
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal DefaultPrice { get; set; }
+    public int? RecommendedKmInterval { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public List<ServiceVariant> Variants { get; set; } = [];
 }

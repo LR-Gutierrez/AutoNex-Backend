@@ -3,6 +3,7 @@ using System;
 using AutoNex.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutoNex.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260612012958_AddMileageAlerts")]
+    partial class AddMileageAlerts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,10 +147,6 @@ namespace AutoNex.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
 
                     b.Property<DateTime?>("LastAlertDate")
                         .HasColumnType("timestamp with time zone")
@@ -303,10 +302,6 @@ namespace AutoNex.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
@@ -318,10 +313,6 @@ namespace AutoNex.Migrations
                     b.Property<int>("ServiceOrderId")
                         .HasColumnType("integer")
                         .HasColumnName("service_order_id");
-
-                    b.Property<int?>("ServiceVariantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("service_variant_id");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 2)
@@ -336,63 +327,7 @@ namespace AutoNex.Migrations
 
                     b.HasIndex("ServiceOrderId");
 
-                    b.HasIndex("ServiceVariantId");
-
                     b.ToTable("service_order_items", (string)null);
-                });
-
-            modelBuilder.Entity("AutoNex.Models.ServiceVariant", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<int>("MaxKmInterval")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_km_interval");
-
-                    b.Property<int>("MinKmInterval")
-                        .HasColumnType("integer")
-                        .HasColumnName("min_km_interval");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.Property<int?>("RecommendedMonths")
-                        .HasColumnType("integer")
-                        .HasColumnName("recommended_months");
-
-                    b.Property<int>("ServiceId")
-                        .HasColumnType("integer")
-                        .HasColumnName("service_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServiceId");
-
-                    b.ToTable("service_variants", (string)null);
                 });
 
             modelBuilder.Entity("AutoNex.Models.Supplier", b =>
@@ -675,29 +610,11 @@ namespace AutoNex.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AutoNex.Models.ServiceVariant", "ServiceVariant")
-                        .WithMany()
-                        .HasForeignKey("ServiceVariantId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Consumable");
 
                     b.Navigation("Service");
 
                     b.Navigation("ServiceOrder");
-
-                    b.Navigation("ServiceVariant");
-                });
-
-            modelBuilder.Entity("AutoNex.Models.ServiceVariant", b =>
-                {
-                    b.HasOne("AutoNex.Models.Service", "Service")
-                        .WithMany("Variants")
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("AutoNex.Models.Vehicle", b =>
@@ -714,11 +631,6 @@ namespace AutoNex.Migrations
             modelBuilder.Entity("AutoNex.Models.Client", b =>
                 {
                     b.Navigation("Vehicles");
-                });
-
-            modelBuilder.Entity("AutoNex.Models.Service", b =>
-                {
-                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("AutoNex.Models.ServiceOrder", b =>

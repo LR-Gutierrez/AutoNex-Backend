@@ -1,5 +1,6 @@
 using AutoNex.DTOs.Clients;
 using AutoNex.DTOs.Consumables;
+using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.DTOs.Tools;
@@ -83,6 +84,42 @@ public static class MappingExtensions
             service.Name,
             service.Description,
             service.DefaultPrice,
+            service.RecommendedKmInterval,
             service.CreatedAt
         );
+
+    public static ServiceVariantResponse ToResponse(this ServiceVariant variant)
+        => new(
+            variant.Id,
+            variant.ServiceId,
+            variant.Service.Name,
+            variant.Name,
+            variant.Description,
+            variant.MinKmInterval,
+            variant.MaxKmInterval,
+            variant.RecommendedMonths,
+            variant.IsActive,
+            variant.CreatedAt
+        );
+
+    public static MileageAlertResponse ToResponse(this MileageAlert alert, int? currentKm = null)
+    {
+        var effectiveKm = currentKm ?? alert.LastRecordedKm;
+        var remainingKm = alert.NextAlertKm - effectiveKm;
+        var isDue = alert.IsActive && effectiveKm + (alert.EstimatedWeeklyKm * 2) >= alert.NextAlertKm;
+
+        return new MileageAlertResponse(
+            alert.Id,
+            alert.VehicleId,
+            $"{alert.Vehicle.Brand} {alert.Vehicle.Model} ({alert.Vehicle.LicensePlate})",
+            alert.LastRecordedKm,
+            alert.EstimatedWeeklyKm,
+            alert.NextAlertKm,
+            remainingKm > 0 ? remainingKm : 0,
+            isDue,
+            alert.LastAlertDate,
+            alert.IsActive,
+            alert.CreatedAt
+        );
+    }
 }

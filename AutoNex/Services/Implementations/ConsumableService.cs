@@ -26,20 +26,22 @@ public class ConsumableService : IConsumableService
         if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<ConsumableCategory>(category, true, out var cat))
             query = query.Where(c => c.Category == cat);
 
-        return await query
+        var items = await query
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.ToResponse())
             .ToListAsync();
+
+        return items.Select(c => c.ToResponse()).ToList();
     }
 
     public async Task<List<ConsumableResponse>> GetLowStockAsync()
     {
-        return await _context.Consumables
+        var items = await _context.Consumables
             .Include(c => c.Supplier)
             .Where(c => c.StockQuantity <= c.MinStock)
             .OrderBy(c => c.StockQuantity)
-            .Select(c => c.ToResponse())
             .ToListAsync();
+
+        return items.Select(c => c.ToResponse()).ToList();
     }
 
     public async Task<ConsumableResponse?> GetByIdAsync(int id)

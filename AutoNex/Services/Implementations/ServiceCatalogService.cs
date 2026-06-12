@@ -17,10 +17,11 @@ public class ServiceCatalogService : IServiceCatalogService
 
     public async Task<List<ServiceResponse>> GetAllAsync()
     {
-        return await _context.Services
+        var services = await _context.Services
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => s.ToResponse())
             .ToListAsync();
+
+        return services.Select(s => s.ToResponse()).ToList();
     }
 
     public async Task<ServiceResponse?> GetByIdAsync(int id)
@@ -35,7 +36,8 @@ public class ServiceCatalogService : IServiceCatalogService
         {
             Name = request.Name,
             Description = request.Description,
-            DefaultPrice = request.DefaultPrice
+            DefaultPrice = request.DefaultPrice,
+            RecommendedKmInterval = request.RecommendedKmInterval
         };
 
         _context.Services.Add(service);
@@ -52,6 +54,7 @@ public class ServiceCatalogService : IServiceCatalogService
         service.Name = request.Name;
         service.Description = request.Description;
         service.DefaultPrice = request.DefaultPrice;
+        service.RecommendedKmInterval = request.RecommendedKmInterval;
         service.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -65,6 +68,76 @@ public class ServiceCatalogService : IServiceCatalogService
 
         service.IsDeleted = true;
         service.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // Service Variants
+
+    public async Task<List<ServiceVariantResponse>> GetVariantsAsync(int serviceId)
+    {
+        var variants = await _context.ServiceVariants
+            .Include(v => v.Service)
+            .Where(v => v.ServiceId == serviceId)
+            .OrderBy(v => v.Name)
+            .ToListAsync();
+
+        return variants.Select(v => v.ToResponse()).ToList();
+    }
+
+    public async Task<ServiceVariantResponse?> GetVariantByIdAsync(int id)
+    {
+        var variant = await _context.ServiceVariants
+            .Include(v => v.Service)
+            .FirstOrDefaultAsync(v => v.Id == id);
+
+        return variant?.ToResponse();
+    }
+
+    public async Task<ServiceVariantResponse> CreateVariantAsync(int serviceId, CreateServiceVariantRequest request)
+    {
+        var service = await _context.Services.FindAsync(serviceId)
+            ?? throw new KeyNotFoundException("Servicio no encontrado");
+
+        var variant = new Models.ServiceVariant
+        {
+            ServiceId = serviceId,
+            Name = request.Name,
+            Description = request.Description,
+            MinKmInterval = request.MinKmInterval,
+            MaxKmInterval = request.MaxKmInterval,
+            RecommendedMonths = request.RecommendedMonths
+        };
+
+        _context.ServiceVariants.Add(variant);
+        await _context.SaveChangesAsync();
+
+        return (await GetVariantByIdAsync(variant.Id))!;
+    }
+
+    public async Task<ServiceVariantResponse?> UpdateVariantAsync(int id, UpdateServiceVariantRequest request)
+    {
+        var variant = await _context.ServiceVariants.FindAsync(id);
+        if (variant is null) return null;
+
+        variant.Name = request.Name;
+        variant.Description = request.Description;
+        variant.MinKmInterval = request.MinKmInterval;
+        variant.MaxKmInterval = request.MaxKmInterval;
+        variant.RecommendedMonths = request.RecommendedMonths;
+        variant.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return (await GetVariantByIdAsync(id))!;
+    }
+
+    public async Task<bool> DeleteVariantAsync(int id)
+    {
+        var variant = await _context.ServiceVariants.FindAsync(id);
+        if (variant is null) return false;
+
+        variant.IsActive = false;
+        variant.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return true;
     }

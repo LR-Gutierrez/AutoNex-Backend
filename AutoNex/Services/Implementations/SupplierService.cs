@@ -18,10 +18,11 @@ public class SupplierService : ISupplierService
 
     public async Task<List<SupplierResponse>> GetAllAsync()
     {
-        return await _context.Suppliers
+        var suppliers = await _context.Suppliers
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => s.ToResponse())
             .ToListAsync();
+
+        return suppliers.Select(s => s.ToResponse()).ToList();
     }
 
     public async Task<SupplierResponse?> GetByIdAsync(int id)

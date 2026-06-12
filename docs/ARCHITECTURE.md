@@ -59,8 +59,10 @@ Client (1) ──< (N) Vehicle
 Vehicle (1) ──< (N) ServiceOrder
 Vehicle (1) ── (1) MileageAlert
 ServiceOrder (1) ──< (N) ServiceOrderItem
+ServiceOrderItem (N) >── (1) ServiceVariant (nullable)
 ServiceOrderItem (N) >── (1) Consumable (nullable)
 Service (1) ──< (N) ServiceOrderItem
+Service (1) ──< (N) ServiceVariant
 Supplier (1) ──< (N) Consumable
 User (1) ──< (N) FinancialRecord
 ```
@@ -75,9 +77,10 @@ User (1) ──< (N) FinancialRecord
 | **Suppliers** | Id, Name, ContactPerson, Phone, Email, IsDeleted, CreatedAt, UpdatedAt |
 | **Consumables** | Id, Name, Category (enum: Oil/SparkPlug/Coolant/Grease/BrakeFluid/Other), StockQuantity, MinStock, UnitPrice, SupplierId (FK), IsDeleted, CreatedAt, UpdatedAt |
 | **Tools** | Id, Name, Category (enum: Jack/Wrench/Ratchet/Screwdriver/Hammer/Other), Quantity, Status (enum: Available/Damaged/Lost), PurchaseDate, IsDeleted, CreatedAt, UpdatedAt |
-| **Services** | Id, Name, Description, DefaultPrice, IsDeleted, CreatedAt, UpdatedAt |
+| **Services** | Id, Name, Description, DefaultPrice, RecommendedKmInterval (nullable), IsDeleted, CreatedAt, UpdatedAt |
 | **ServiceOrders** | Id, VehicleId (FK), ClientId (FK), UserId (FK), CurrentKm, Date, Status (enum: Open/InProgress/Completed/Cancelled), TotalAmount, Notes, IsDeleted, CreatedAt, UpdatedAt |
-| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK), ConsumableId (FK nullable), Quantity, UnitPrice, CreatedAt |
+| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK), ServiceVariantId (FK nullable), ConsumableId (FK nullable), Quantity, UnitPrice, CreatedAt |
+| **ServiceVariants** | Id, ServiceId (FK), Name, Description, MinKmInterval, MaxKmInterval, RecommendedMonths (nullable), IsActive, CreatedAt, UpdatedAt |
 | **MileageAlerts** | Id, VehicleId (FK), LastRecordedKm, EstimatedWeeklyKm, NextAlertKm, LastAlertDate, IsActive, CreatedAt, UpdatedAt |
 | **FinancialRecords** | Id, Type (enum: Income/Expense), Category (enum: Services/Suppliers/Rent/Payroll/Utilities/Other), Amount, Description, Date, UserId (FK), IsDeleted, CreatedAt, UpdatedAt |
 | **Notifications** | Id, ClientId (FK), VehicleId (FK nullable), Type (enum: WhatsApp/SMS/Email), Recipient, Message, SentAt, Status (enum: Pending/Sent/Failed), CreatedAt |
@@ -160,10 +163,15 @@ DELETE /api/tools/{id}           → Soft delete
 ### 5.8 Servicios (Catálogo)
 
 ```
-GET    /api/services             → Listar servicios
-POST   /api/services             → Crear servicio
-PUT    /api/services/{id}        → Actualizar precio/nombre
-DELETE /api/services/{id}        → Soft delete
+GET    /api/services                      → Listar servicios
+POST   /api/services                      → Crear servicio
+PUT    /api/services/{id}                 → Actualizar precio/nombre
+DELETE /api/services/{id}                 → Soft delete
+GET    /api/services/{id}/variants        → Listar variantes de un servicio
+POST   /api/services/{id}/variants        → Crear variante
+GET    /api/services/variants/{id}        → Obtener variante por ID
+PUT    /api/services/variants/{id}        → Actualizar variante
+DELETE /api/services/variants/{id}        → Desactivar variante
 ```
 
 ### 5.9 Órdenes de Servicio
@@ -339,6 +347,7 @@ AutoNex/
 │   ├── Consumable.cs
 │   ├── Tool.cs
 │   ├── Service.cs
+│   ├── ServiceVariant.cs
 │   ├── ServiceOrder.cs
 │   ├── ServiceOrderItem.cs
 │   ├── MileageAlert.cs
@@ -443,18 +452,21 @@ AutoNex/
 - **Rate Limiting**: Considerar para endpoints de autenticación
 - **Validación**: Todos los inputs validados con FluentValidation antes de procesar
 
-## 14. Próximos Pasos — Etapa 1 (Fundación)
+## 14. Referencia de Intervalos de Mantenimiento
 
-- [ ] Agregar paquetes NuGet necesarios (Npgsql, JWT, FluentValidation, BCrypt)
-- [ ] Crear carpetas del proyecto según estructura definida
-- [ ] Implementar `Enums/` (todos los enumeradores)
-- [ ] Implementar `Models/` (User, Client, Vehicle, Supplier)
-- [ ] Implementar `Data/AppDbContext.cs` con configuraciones Fluent API
-- [ ] Crear migración inicial y aplicar a PostgreSQL
-- [ ] Implementar `DTOs/` para Auth, Clients, Vehicles, Suppliers
-- [ ] Implementar `Services/` (AuthService, ClientService, VehicleService, SupplierService)
-- [ ] Implementar `Controllers/` (AuthController, ClientsController, VehiclesController, SuppliersController)
-- [ ] Implementar `Middleware/ExceptionMiddleware.cs`
-- [ ] Configurar `Program.cs` (DI, JWT, Swagger, CORS)
-- [ ] Seed de usuario Admin por defecto
-- [ ] Probar endpoints con Swagger
+Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa de referencia con intervalos de mantenimiento por tipo de servicio, variante de material, kilometraje y tiempo, incluyendo fuentes de fabricantes de componentes (NGK, Monroe) y manuales de vehículos (Kia, Mazda, Ford).
+
+## 15. Próximos Pasos
+
+### Completado
+
+- ✅ **Etapa 1 — Fundación**: DB, Auth, CRUD Clientes/Vehículos/Proveedores/Usuarios (excepto CORS en Program.cs)
+- ✅ **Etapa 2 — Inventarios**: Consumibles, Herramientas (CRUD, filtros, stock mínimo)
+- ✅ **Etapa 3 — Órdenes de Servicio**: Catálogo de servicios, ServiceVariants, órdenes con items, descuento de stock, cambio de estados
+- ✅ **Etapa 4 — Alertas de Kilometraje**: Modelo MileageAlert, cálculo híbrido (km + tiempo), endpoints REST, integración con órdenes completadas
+
+### Pendiente
+
+- [ ] **Etapa 5 — Finanzas**: CRUD de FinancialRecords, summary por período, agrupación por categoría
+- [ ] **Etapa 6 — WhatsApp & Notificaciones**: Integración con Twilio/WhatsApp API, envío de recordatorios
+- [ ] **Infraestructura**: CORS, paginación en listados, rate limiting, health checks

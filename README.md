@@ -36,3 +36,4 @@ API REST para la administración integral de un taller mecánico. Desarrollada e
 6. **WhatsApp & Notificaciones** — Integración de mensajería
 
 Ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para documentación técnica detallada.
+Ver [docs/MAINTENANCE_INTERVALS.md](docs/MAINTENANCE_INTERVALS.md) para tabla de referencia de intervalos de mantenimiento por tipo de servicio y variante.

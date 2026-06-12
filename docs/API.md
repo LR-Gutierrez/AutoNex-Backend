@@ -234,15 +234,44 @@ Requiere rol **Admin**. Crea un servicio.
 {
   "name": "Cambio de Aceite",
   "description": "Cambio de aceite y filtro",
-  "defaultPrice": 45.00
+  "defaultPrice": 45.00,
+  "recommendedKmInterval": 10000
 }
 ```
+`recommendedKmInterval` y `description` son opcionales.
 
 ### `PUT /api/services/{id}`
-Requiere rol **Admin**. Actualiza un servicio.
+Requiere rol **Admin**. Actualiza un servicio. Mismos campos que POST.
 
 ### `DELETE /api/services/{id}`
 Requiere rol **Admin**. Soft delete del servicio.
+
+### `GET /api/services/{serviceId}/variants`
+Lista las variantes de un servicio.
+
+### `GET /api/services/variants/{id}`
+Obtiene una variante por ID.
+
+### `POST /api/services/{serviceId}/variants`
+Requiere rol **Admin**. Crea una variante.
+
+**Request:**
+```json
+{
+  "name": "Aceite Sintético 5W-30",
+  "description": "Para motores modernos",
+  "minKmInterval": 10000,
+  "maxKmInterval": 15000,
+  "recommendedMonths": 12
+}
+```
+`description` y `recommendedMonths` son opcionales.
+
+### `PUT /api/services/variants/{id}`
+Requiere rol **Admin**. Actualiza una variante. Mismos campos que POST.
+
+### `DELETE /api/services/variants/{id}`
+Requiere rol **Admin**. Desactiva una variante (soft delete).
 
 ---
 
@@ -259,6 +288,7 @@ Obtiene una orden con todos sus items.
 
 ### `POST /api/service-orders`
 Crea una orden. Descuenta stock de consumibles automáticamente.
+Al marcar como `Completed`, actualiza la alerta de kilometraje del vehículo.
 
 **Request:**
 ```json
@@ -270,6 +300,7 @@ Crea una orden. Descuenta stock de consumibles automáticamente.
   "items": [
     {
       "serviceId": 1,
+      "serviceVariantId": 1,
       "consumableId": 1,
       "quantity": 1,
       "unitPrice": 35.00
@@ -277,14 +308,14 @@ Crea una orden. Descuenta stock de consumibles automáticamente.
   ]
 }
 ```
-`consumableId` es opcional (si no se usa consumible).
+`serviceVariantId` y `consumableId` son opcionales.
 
 ### `PUT /api/service-orders/{id}`
 Actualiza una orden (solo si no está `Completed` o `Cancelled`).
 Revierte el stock anterior y vuelve a descontar con los nuevos items.
 
 ### `PATCH /api/service-orders/{id}/status`
-Cambia el estado de una orden.
+Cambia el estado de una orden. Al pasar a `Completed`, actualiza automáticamente la alerta de kilometraje del vehículo.
 
 **Request:**
 ```json
@@ -292,6 +323,68 @@ Cambia el estado de una orden.
   "status": "Completed"
 }
 ```
+
+---
+
+## Alertas de Kilometraje
+
+### `GET /api/mileage-alerts`
+Lista todas las alertas activas.
+
+### `GET /api/mileage-alerts?due=true`
+Filtra solo las alertas próximas a vencer según la fórmula:
+`kmActual + (kmPorSemana × 2) >= kmAlerta`
+
+### `GET /api/mileage-alerts/{id}`
+Obtiene una alerta.
+
+**Response:**
+```json
+{
+  "data": {
+    "id": 1,
+    "vehicleId": 1,
+    "vehicleInfo": "Toyota Corolla (ABC123)",
+    "lastRecordedKm": 50000,
+    "estimatedWeeklyKm": 300,
+    "nextAlertKm": 60000,
+    "remainingKm": 10000,
+    "isDue": false,
+    "lastAlertDate": null,
+    "isActive": true,
+    "createdAt": "2026-06-11T00:00:00Z"
+  },
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+### `POST /api/mileage-alerts`
+Configura una alerta para un vehículo.
+
+**Request:**
+```json
+{
+  "vehicleId": 1,
+  "estimatedWeeklyKm": 300
+}
+```
+
+### `PUT /api/mileage-alerts/{id}`
+Actualiza el kilometraje semanal estimado.
+
+**Request:**
+```json
+{
+  "estimatedWeeklyKm": 350
+}
+```
+
+### `DELETE /api/mileage-alerts/{id}`
+Desactiva la alerta (soft delete).
+
+### `POST /api/mileage-alerts/{id}/send`
+Genera un recordatorio manual. (El envío real por WhatsApp se integrará en etapa posterior).
 
 ---
 
@@ -327,5 +420,5 @@ Cambia el estado de una orden.
 | 401 | Unauthorized (token faltante/inválido) |
 | 403 | Forbidden (rol sin permiso) |
 | 404 | Not Found |
-| 409 | Conflict (ej. email duplicado) |
+| 409 | Conflict (ej. email duplicado, alerta ya existe) |
 | 415 | Unsupported Media Type (falta Content-Type) |

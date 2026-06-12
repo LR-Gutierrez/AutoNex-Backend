@@ -18,16 +18,19 @@ public class ClientService : IClientService
 
     public async Task<List<ClientResponse>> GetAllAsync(string? search)
     {
-        var query = _context.Clients.AsQueryable();
+        var query = _context.Clients
+            .Include(c => c.Vehicles)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(c =>
                 c.FullName.Contains(search) || c.Phone.Contains(search));
 
-        return await query
+        var clients = await query
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => c.ToResponse())
             .ToListAsync();
+
+        return clients.Select(c => c.ToResponse()).ToList();
     }
 
     public async Task<ClientResponse?> GetByIdAsync(int id)

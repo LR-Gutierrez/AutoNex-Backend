@@ -27,10 +27,11 @@ public class VehicleService : IVehicleService
                 v.LicensePlate.Contains(search) ||
                 v.Client.FullName.Contains(search));
 
-        return await query
+        var vehicles = await query
             .OrderByDescending(v => v.CreatedAt)
-            .Select(v => v.ToResponse())
             .ToListAsync();
+
+        return vehicles.Select(v => v.ToResponse()).ToList();
     }
 
     public async Task<VehicleResponse?> GetByIdAsync(int id)
@@ -87,6 +88,17 @@ public class VehicleService : IVehicleService
 
         vehicle.IsDeleted = true;
         vehicle.UpdatedAt = DateTime.UtcNow;
+
+        var alerts = await _context.MileageAlerts
+            .Where(a => a.VehicleId == id)
+            .ToListAsync();
+
+        foreach (var alert in alerts)
+        {
+            alert.IsDeleted = true;
+            alert.UpdatedAt = DateTime.UtcNow;
+        }
+
         await _context.SaveChangesAsync();
         return true;
     }

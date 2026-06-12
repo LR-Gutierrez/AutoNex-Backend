@@ -5,5 +5,6 @@ public record ServiceResponse(
     string Name,
     string? Description,
     decimal DefaultPrice,
+    int? RecommendedKmInterval,
     DateTime CreatedAt
 );

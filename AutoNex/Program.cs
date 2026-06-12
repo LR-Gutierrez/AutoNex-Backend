@@ -45,6 +45,7 @@ builder.Services.AddScoped<IConsumableService, ConsumableService>();
 builder.Services.AddScoped<IToolService, ToolService>();
 builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
+builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -82,7 +83,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

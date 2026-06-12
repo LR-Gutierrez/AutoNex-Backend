@@ -27,10 +27,11 @@ public class ToolService : IToolService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ToolStatus>(status, true, out var st))
             query = query.Where(t => t.Status == st);
 
-        return await query
+        var tools = await query
             .OrderByDescending(t => t.CreatedAt)
-            .Select(t => t.ToResponse())
             .ToListAsync();
+
+        return tools.Select(t => t.ToResponse()).ToList();
     }
 
     public async Task<ToolResponse?> GetByIdAsync(int id)

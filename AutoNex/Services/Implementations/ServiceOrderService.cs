@@ -10,10 +10,12 @@ namespace AutoNex.Services.Implementations;
 public class ServiceOrderService : IServiceOrderService
 {
     private readonly AppDbContext _context;
+    private readonly IMileageAlertService _mileageAlertService;
 
-    public ServiceOrderService(AppDbContext context)
+    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService)
     {
         _context = context;
+        _mileageAlertService = mileageAlertService;
     }
 
     public async Task<List<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status)
@@ -25,6 +27,8 @@ public class ServiceOrderService : IServiceOrderService
             .Include(o => o.Items)
                 .ThenInclude(i => i.Service)
             .Include(o => o.Items)
+                .ThenInclude(i => i.ServiceVariant)
+            .Include(o => o.Items)
                 .ThenInclude(i => i.Consumable)
             .AsQueryable();
 
@@ -35,10 +39,11 @@ public class ServiceOrderService : IServiceOrderService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ServiceOrderStatus>(status, true, out var s))
             query = query.Where(o => o.Status == s);
 
-        return await query
+        var orders = await query
             .OrderByDescending(o => o.CreatedAt)
-            .Select(o => MapToResponse(o))
             .ToListAsync();
+
+        return orders.Select(o => MapToResponse(o)).ToList();
     }
 
     public async Task<ServiceOrderResponse?> GetByIdAsync(int id)
@@ -49,6 +54,8 @@ public class ServiceOrderService : IServiceOrderService
             .Include(o => o.User)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Service)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.ServiceVariant)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Consumable)
             .FirstOrDefaultAsync(o => o.Id == id);
@@ -94,6 +101,7 @@ public class ServiceOrderService : IServiceOrderService
             var item = new ServiceOrderItem
             {
                 ServiceId = itemReq.ServiceId,
+                ServiceVariantId = itemReq.ServiceVariantId,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -163,6 +171,7 @@ public class ServiceOrderService : IServiceOrderService
             var item = new ServiceOrderItem
             {
                 ServiceId = itemReq.ServiceId,
+                ServiceVariantId = itemReq.ServiceVariantId,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -190,6 +199,17 @@ public class ServiceOrderService : IServiceOrderService
         order.Status = request.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
+        if (request.Status == ServiceOrderStatus.Completed)
+        {
+            var itemIds = await _context.ServiceOrderItems
+                .Where(i => i.ServiceOrderId == id)
+                .Select(i => i.Id)
+                .ToListAsync();
+
+            await _mileageAlertService.UpdateAlertFromServiceOrderAsync(
+                order.VehicleId, order.CurrentKm, itemIds);
+        }
+
         await _context.SaveChangesAsync();
         return (await GetByIdAsync(id))!;
     }
@@ -214,6 +234,8 @@ public class ServiceOrderService : IServiceOrderService
                 i.Id,
                 i.ServiceId,
                 i.Service?.Name ?? "",
+                i.ServiceVariantId,
+                i.ServiceVariant?.Name,
                 i.ConsumableId,
                 i.Consumable?.Name,
                 i.Quantity,
