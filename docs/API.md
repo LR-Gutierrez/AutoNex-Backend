@@ -50,6 +50,8 @@ Requiere rol **Admin**. Crea un nuevo usuario.
 }
 ```
 
+**Response:** Misma estructura que Login (`userId`, `fullName`, `email`, `role`, `token`).
+
 **Roles válidos:** `Admin`, `Mechanic`, `Receptionist`
 
 ---
@@ -381,7 +383,7 @@ Actualiza el kilometraje semanal estimado.
 ```
 
 ### `DELETE /api/mileage-alerts/{id}`
-Desactiva la alerta (soft delete).
+Desactiva la alerta (IsActive = false).
 
 ### `POST /api/mileage-alerts/{id}/send`
 Genera un recordatorio manual. (El envío real por WhatsApp se integrará en etapa posterior).

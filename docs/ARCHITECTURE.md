@@ -79,11 +79,11 @@ User (1) ──< (N) FinancialRecord
 | **Tools** | Id, Name, Category (enum: Jack/Wrench/Ratchet/Screwdriver/Hammer/Other), Quantity, Status (enum: Available/Damaged/Lost), PurchaseDate, IsDeleted, CreatedAt, UpdatedAt |
 | **Services** | Id, Name, Description, DefaultPrice, RecommendedKmInterval (nullable), IsDeleted, CreatedAt, UpdatedAt |
 | **ServiceOrders** | Id, VehicleId (FK), ClientId (FK), UserId (FK), CurrentKm, Date, Status (enum: Open/InProgress/Completed/Cancelled), TotalAmount, Notes, IsDeleted, CreatedAt, UpdatedAt |
-| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK), ServiceVariantId (FK nullable), ConsumableId (FK nullable), Quantity, UnitPrice, CreatedAt |
+| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK), ServiceVariantId (FK nullable), ConsumableId (FK nullable), Quantity, UnitPrice, IsDeleted, CreatedAt |
 | **ServiceVariants** | Id, ServiceId (FK), Name, Description, MinKmInterval, MaxKmInterval, RecommendedMonths (nullable), IsActive, CreatedAt, UpdatedAt |
-| **MileageAlerts** | Id, VehicleId (FK), LastRecordedKm, EstimatedWeeklyKm, NextAlertKm, LastAlertDate, IsActive, CreatedAt, UpdatedAt |
+| **MileageAlerts** | Id, VehicleId (FK), LastRecordedKm, EstimatedWeeklyKm, NextAlertKm, LastAlertDate, IsActive, IsDeleted, CreatedAt, UpdatedAt |
 | **FinancialRecords** | Id, Type (enum: Income/Expense), Category (enum: Services/Suppliers/Rent/Payroll/Utilities/Other), Amount, Description, Date, UserId (FK), IsDeleted, CreatedAt, UpdatedAt |
-| **Notifications** | Id, ClientId (FK), VehicleId (FK nullable), Type (enum: WhatsApp/SMS/Email), Recipient, Message, SentAt, Status (enum: Pending/Sent/Failed), CreatedAt |
+| **Notifications** | Id, ClientId (FK), VehicleId (FK nullable), Type (enum: WhatsApp/SMS/Email), Recipient, Message, SentAt, Status (enum: Pending/Sent/Failed), IsDeleted, CreatedAt |
 | **InventoryMovements** | Id, ConsumableId (FK nullable), ToolId (FK nullable), MovementType (enum: In/Out), Quantity, Reference, ReferenceId, Notes, CreatedAt |
 
 ### 4.3 Convenciones de Diseño
@@ -136,6 +136,7 @@ DELETE /api/vehicles/{id}               → Soft delete
 
 ```
 GET    /api/suppliers           → Listar
+GET    /api/suppliers/{id}      → Obtener por ID
 POST   /api/suppliers           → Crear
 PUT    /api/suppliers/{id}      → Actualizar
 DELETE /api/suppliers/{id}      → Soft delete
@@ -171,7 +172,7 @@ GET    /api/services/{id}/variants        → Listar variantes de un servicio
 POST   /api/services/{id}/variants        → Crear variante
 GET    /api/services/variants/{id}        → Obtener variante por ID
 PUT    /api/services/variants/{id}        → Actualizar variante
-DELETE /api/services/variants/{id}        → Desactivar variante
+DELETE /api/services/variants/{id}        → Desactivar variante (IsActive = false)
 ```
 
 ### 5.9 Órdenes de Servicio
@@ -187,17 +188,18 @@ PATCH  /api/service-orders/{id}/status        → Cambiar estado (Open→InProgr
 ### 5.10 Alertas de Kilometraje
 
 ```
-GET    /api/mileage-alerts                   → Alertas activas
-GET    /api/mileage-alerts/due               → Alertas próximas a vencer
+GET    /api/mileage-alerts                   → Listar alertas
+GET    /api/mileage-alerts?due=true          → Alertas próximas a vencer
 POST   /api/mileage-alerts                   → Configurar alerta para vehículo
 PUT    /api/mileage-alerts/{id}              → Actualizar km estimados/semana
-POST   /api/mileage-alerts/{id}/send         → Enviar recordatorio manual
+POST   /api/mileage-alerts/{id}/send         → Enviar recordatorio (WhatsApp via Twilio)
 ```
 
 ### 5.11 Finanzas
 
 ```
 GET    /api/financial-records                → Listar (filtro por tipo/fecha/categoría)
+GET    /api/financial-records/{id}           → Obtener por ID
 POST   /api/financial-records                → Crear registro (ingreso o egreso)
 PUT    /api/financial-records/{id}           → Actualizar
 DELETE /api/financial-records/{id}           → Soft delete
