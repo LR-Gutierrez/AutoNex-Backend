@@ -126,7 +126,7 @@ DELETE /api/clients/{id}       → Soft delete
 
 ```
 GET    /api/vehicles                    → Listar (filtro por placa/cliente)
-GET    /api/vehicles/{id}               → Obtener con historial de órdenes
+GET    /api/vehicles/{id}               → Obtener por ID
 POST   /api/vehicles                    → Crear (asociado a cliente)
 PUT    /api/vehicles/{id}               → Actualizar
 DELETE /api/vehicles/{id}               → Soft delete
@@ -212,6 +212,13 @@ GET    /api/financial-records/by-category    → Agrupado por categoría
 ```
 GET    /api/notifications                    → Historial de mensajes enviados
 POST   /api/notifications/send-whatsapp      → Enviar mensaje manual (disparador)
+```
+
+### 5.13 Movimientos de Inventario
+
+```
+GET    /api/inventory-movements              → Historial (filtro por consumible/herramienta)
+GET    /api/inventory-movements/{id}         → Obtener por ID
 ```
 
 ## 6. Políticas de Respuesta API

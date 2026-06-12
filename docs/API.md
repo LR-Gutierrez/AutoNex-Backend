@@ -580,6 +580,49 @@ Envía una notificación manual por WhatsApp.
 
 ---
 
+---
+
+## Movimientos de Inventario
+
+### `GET /api/inventory-movements`
+Historial de movimientos de inventario (entradas/salidas de consumibles y herramientas).
+
+**Query Parameters:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `consumableId` | int? | Filtrar por consumible |
+| `toolId` | int? | Filtrar por herramienta |
+| `page` | int? | Número de página |
+| `pageSize` | int? | Elementos por página |
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "consumableId": 1,
+      "consumableName": "Aceite 5W-30",
+      "toolId": null,
+      "toolName": null,
+      "movementType": "Out",
+      "quantity": 2,
+      "reference": "ServiceOrder",
+      "referenceId": 5,
+      "notes": "Descuento por orden de servicio",
+      "createdAt": "2026-06-11T00:00:00Z"
+    }
+  ],
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+### `GET /api/inventory-movements/{id}`
+Obtiene un movimiento por ID.
+
+---
+
 ## Infraestructura
 
 ### `GET /health`
