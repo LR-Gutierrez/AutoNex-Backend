@@ -1,10 +1,11 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Services;
 
 namespace AutoNex.Services.Interfaces;
 
 public interface IServiceCatalogService
 {
-    Task<List<ServiceResponse>> GetAllAsync();
+    Task<PagedResponse<ServiceResponse>> GetAllAsync(int? page, int? pageSize);
     Task<ServiceResponse?> GetByIdAsync(int id);
     Task<ServiceResponse> CreateAsync(CreateServiceRequest request);
     Task<ServiceResponse?> UpdateAsync(int id, UpdateServiceRequest request);

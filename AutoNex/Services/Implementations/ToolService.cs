@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Tools;
 using AutoNex.Enums;
 using AutoNex.Helpers;
@@ -17,7 +18,7 @@ public class ToolService : IToolService
         _context = context;
     }
 
-    public async Task<List<ToolResponse>> GetAllAsync(string? category, string? status)
+    public async Task<PagedResponse<ToolResponse>> GetAllAsync(string? category, string? status, int? page, int? pageSize)
     {
         var query = _context.Tools.AsQueryable();
 
@@ -27,11 +28,17 @@ public class ToolService : IToolService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ToolStatus>(status, true, out var st))
             query = query.Where(t => t.Status == st);
 
-        var tools = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(t => t.CreatedAt);
 
-        return tools.Select(t => t.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<ToolResponse>
+        {
+            Items = paged.Items.Select(t => t.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<ToolResponse?> GetByIdAsync(int id)

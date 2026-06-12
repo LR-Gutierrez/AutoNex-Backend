@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Services;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -15,13 +16,21 @@ public class ServiceCatalogService : IServiceCatalogService
         _context = context;
     }
 
-    public async Task<List<ServiceResponse>> GetAllAsync()
+    public async Task<PagedResponse<ServiceResponse>> GetAllAsync(int? page, int? pageSize)
     {
-        var services = await _context.Services
+        var query = _context.Services
             .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync();
+            .AsQueryable();
 
-        return services.Select(s => s.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<ServiceResponse>
+        {
+            Items = paged.Items.Select(s => s.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<ServiceResponse?> GetByIdAsync(int id)

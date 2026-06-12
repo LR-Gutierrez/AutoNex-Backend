@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Notifications;
 using AutoNex.Helpers;
@@ -22,10 +23,10 @@ public class MileageAlertsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] bool? due)
+    public async Task<IActionResult> GetAll([FromQuery] bool? due, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var alerts = await _mileageAlertService.GetAllAsync(due);
-        return Ok(ApiResponse<List<MileageAlertResponse>>.Ok(alerts));
+        var alerts = await _mileageAlertService.GetAllAsync(due, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<MileageAlertResponse>>.Ok(alerts));
     }
 
     [HttpGet("{id}")]

@@ -558,6 +558,38 @@ Envía un recordatorio automático desde una alerta de kilometraje. Obtiene el t
 
 ---
 
+## Infraestructura
+
+### `GET /health`
+Health check del servicio. Retorna `200 OK` si la API está operativa.
+
+### Paginación
+Todos los endpoints de listado aceptan los siguientes query parameters:
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `page` | int | 1 | Número de página |
+| `pageSize` | int | 20 | Elementos por página (máx. 100) |
+
+**Response paginado:**
+```json
+{
+  "data": {
+    "items": [ ... ],
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 150,
+    "totalPages": 8,
+    "hasPreviousPage": false,
+    "hasNextPage": true
+  },
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+---
+
 ## Formato de respuesta estándar
 
 **Éxito:**

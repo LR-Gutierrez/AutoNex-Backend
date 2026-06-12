@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.Helpers;
 using AutoNex.Models;
@@ -16,7 +17,7 @@ public class MileageAlertService : IMileageAlertService
         _context = context;
     }
 
-    public async Task<List<MileageAlertResponse>> GetAllAsync(bool? due)
+    public async Task<PagedResponse<MileageAlertResponse>> GetAllAsync(bool? due, int? page, int? pageSize)
     {
         var alerts = await _context.MileageAlerts
             .Include(a => a.Vehicle)
@@ -24,10 +25,25 @@ public class MileageAlertService : IMileageAlertService
             .ToListAsync();
 
         var filtered = due.HasValue && due.Value
-            ? alerts.Where(a => a.IsActive && IsDue(a))
+            ? alerts.Where(a => a.IsActive && IsDue(a)).ToList()
             : alerts;
 
-        return filtered.Select(a => a.ToResponse()).ToList();
+        var p = Math.Max(page ?? 1, 1);
+        var ps = Math.Clamp(pageSize ?? 20, 1, 100);
+        var totalCount = filtered.Count;
+        var items = filtered
+            .Skip((p - 1) * ps)
+            .Take(ps)
+            .Select(a => a.ToResponse())
+            .ToList();
+
+        return new PagedResponse<MileageAlertResponse>
+        {
+            Items = items,
+            Page = p,
+            PageSize = ps,
+            TotalCount = totalCount
+        };
     }
 
     public async Task<MileageAlertResponse?> GetByIdAsync(int id)

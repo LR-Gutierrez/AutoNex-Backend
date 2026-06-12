@@ -1,10 +1,11 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Vehicles;
 
 namespace AutoNex.Services.Interfaces;
 
 public interface IVehicleService
 {
-    Task<List<VehicleResponse>> GetAllAsync(string? search);
+    Task<PagedResponse<VehicleResponse>> GetAllAsync(string? search, int? page, int? pageSize);
     Task<VehicleResponse?> GetByIdAsync(int id);
     Task<VehicleResponse> CreateAsync(CreateVehicleRequest request);
     Task<VehicleResponse?> UpdateAsync(int id, UpdateVehicleRequest request);

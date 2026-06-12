@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Notifications;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? clientId, [FromQuery] int? vehicleId, [FromQuery] string? status)
+    public async Task<IActionResult> GetAll([FromQuery] int? clientId, [FromQuery] int? vehicleId, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var notifications = await _notificationService.GetAllAsync(clientId, vehicleId, status);
-        return Ok(ApiResponse<List<NotificationResponse>>.Ok(notifications));
+        var notifications = await _notificationService.GetAllAsync(clientId, vehicleId, status, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<NotificationResponse>>.Ok(notifications));
     }
 
     [HttpGet("{id}")]

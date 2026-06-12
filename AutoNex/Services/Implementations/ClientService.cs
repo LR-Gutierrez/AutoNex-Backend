@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Clients;
 using AutoNex.Helpers;
 using AutoNex.Models;
@@ -16,7 +17,7 @@ public class ClientService : IClientService
         _context = context;
     }
 
-    public async Task<List<ClientResponse>> GetAllAsync(string? search)
+    public async Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize)
     {
         var query = _context.Clients
             .Include(c => c.Vehicles)
@@ -26,11 +27,17 @@ public class ClientService : IClientService
             query = query.Where(c =>
                 c.FullName.Contains(search) || c.Phone.Contains(search));
 
-        var clients = await query
-            .OrderByDescending(c => c.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(c => c.CreatedAt);
 
-        return clients.Select(c => c.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<ClientResponse>
+        {
+            Items = paged.Items.Select(c => c.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<ClientResponse?> GetByIdAsync(int id)

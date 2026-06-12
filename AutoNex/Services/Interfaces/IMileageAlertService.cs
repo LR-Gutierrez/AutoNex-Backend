@@ -1,10 +1,11 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.MileageAlerts;
 
 namespace AutoNex.Services.Interfaces;
 
 public interface IMileageAlertService
 {
-    Task<List<MileageAlertResponse>> GetAllAsync(bool? due);
+    Task<PagedResponse<MileageAlertResponse>> GetAllAsync(bool? due, int? page, int? pageSize);
     Task<MileageAlertResponse?> GetByIdAsync(int id);
     Task<MileageAlertResponse> CreateAsync(CreateMileageAlertRequest request);
     Task<MileageAlertResponse?> UpdateAsync(int id, UpdateMileageAlertRequest request);

@@ -460,7 +460,7 @@ Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa
 
 ### Completado
 
-- ✅ **Etapa 1 — Fundación**: DB, Auth, CRUD Clientes/Vehículos/Proveedores/Usuarios (excepto CORS en Program.cs)
+- ✅ **Etapa 1 — Fundación**: DB, Auth, CRUD Clientes/Vehículos/Proveedores/Usuarios
 - ✅ **Etapa 2 — Inventarios**: Consumibles, Herramientas (CRUD, filtros, stock mínimo)
 - ✅ **Etapa 3 — Órdenes de Servicio**: Catálogo de servicios, ServiceVariants, órdenes con items, descuento de stock, cambio de estados
 - ✅ **Etapa 4 — Alertas de Kilometraje**: Modelo MileageAlert, cálculo híbrido (km + tiempo), endpoints REST, integración con órdenes completadas
@@ -469,4 +469,4 @@ Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa
 
 - ✅ **Etapa 5 — Finanzas**: CRUD de FinancialRecords, summary por período, agrupación por categoría
 - ✅ **Etapa 6 — WhatsApp & Notificaciones**: Integración con Twilio/WhatsApp API, envío de recordatorios
-- [ ] **Infraestructura**: CORS, paginación en listados, rate limiting, health checks
+- ✅ **Infraestructura**: CORS, paginación en listados, rate limiting, health checks

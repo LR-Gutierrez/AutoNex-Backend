@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.FinancialRecords;
 using AutoNex.Enums;
 using AutoNex.Helpers;
@@ -17,7 +18,7 @@ public class FinancialRecordService : IFinancialRecordService
         _context = context;
     }
 
-    public async Task<List<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category)
+    public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize)
     {
         var query = _context.FinancialRecords
             .Include(r => r.User)
@@ -32,12 +33,19 @@ public class FinancialRecordService : IFinancialRecordService
         if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<FinancialCategory>(category, true, out var parsedCategory))
             query = query.Where(r => r.Category == parsedCategory);
 
-        var records = await query
+        query = query
             .OrderByDescending(r => r.Date)
-            .ThenByDescending(r => r.CreatedAt)
-            .ToListAsync();
+            .ThenByDescending(r => r.CreatedAt);
 
-        return records.Select(r => r.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<FinancialRecordResponse>
+        {
+            Items = paged.Items.Select(r => r.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<FinancialRecordResponse?> GetByIdAsync(int id)

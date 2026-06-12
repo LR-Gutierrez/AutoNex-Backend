@@ -1,10 +1,11 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Clients;
 
 namespace AutoNex.Services.Interfaces;
 
 public interface IClientService
 {
-    Task<List<ClientResponse>> GetAllAsync(string? search);
+    Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize);
     Task<ClientResponse?> GetByIdAsync(int id);
     Task<ClientResponse> CreateAsync(CreateClientRequest request);
     Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request);

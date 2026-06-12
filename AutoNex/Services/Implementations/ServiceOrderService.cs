@@ -1,6 +1,8 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.ServiceOrders;
 using AutoNex.Enums;
+using AutoNex.Helpers;
 using AutoNex.Models;
 using AutoNex.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +20,7 @@ public class ServiceOrderService : IServiceOrderService
         _mileageAlertService = mileageAlertService;
     }
 
-    public async Task<List<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status)
+    public async Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
     {
         var query = _context.ServiceOrders
             .Include(o => o.Client)
@@ -39,11 +41,17 @@ public class ServiceOrderService : IServiceOrderService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ServiceOrderStatus>(status, true, out var s))
             query = query.Where(o => o.Status == s);
 
-        var orders = await query
-            .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(o => o.CreatedAt);
 
-        return orders.Select(o => MapToResponse(o)).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<ServiceOrderResponse>
+        {
+            Items = paged.Items.Select(o => MapToResponse(o)).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<ServiceOrderResponse?> GetByIdAsync(int id)

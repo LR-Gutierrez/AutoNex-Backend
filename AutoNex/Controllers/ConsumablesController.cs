@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Consumables;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class ConsumablesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? category)
+    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var consumables = await _consumableService.GetAllAsync(category);
-        return Ok(ApiResponse<List<ConsumableResponse>>.Ok(consumables));
+        var consumables = await _consumableService.GetAllAsync(category, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<ConsumableResponse>>.Ok(consumables));
     }
 
     [HttpGet("low-stock")]

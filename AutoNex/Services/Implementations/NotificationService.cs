@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Notifications;
 using AutoNex.Enums;
 using AutoNex.Helpers;
@@ -19,7 +20,7 @@ public class NotificationService : INotificationService
         _twilioService = twilioService;
     }
 
-    public async Task<List<NotificationResponse>> GetAllAsync(int? clientId, int? vehicleId, string? status)
+    public async Task<PagedResponse<NotificationResponse>> GetAllAsync(int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
     {
         var query = _context.Notifications
             .Include(n => n.Client)
@@ -33,11 +34,17 @@ public class NotificationService : INotificationService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<NotificationStatus>(status, true, out var parsedStatus))
             query = query.Where(n => n.Status == parsedStatus);
 
-        var notifications = await query
-            .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(n => n.CreatedAt);
 
-        return notifications.Select(n => n.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<NotificationResponse>
+        {
+            Items = paged.Items.Select(n => n.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<NotificationResponse?> GetByIdAsync(int id)

@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Tools;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class ToolsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? status)
+    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var tools = await _toolService.GetAllAsync(category, status);
-        return Ok(ApiResponse<List<ToolResponse>>.Ok(tools));
+        var tools = await _toolService.GetAllAsync(category, status, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<ToolResponse>>.Ok(tools));
     }
 
     [HttpGet("{id}")]

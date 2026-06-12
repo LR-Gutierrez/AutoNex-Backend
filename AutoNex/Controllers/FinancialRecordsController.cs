@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.FinancialRecords;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category)
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var records = await _financialRecordService.GetAllAsync(from, to, type, category);
-        return Ok(ApiResponse<List<FinancialRecordResponse>>.Ok(records));
+        var records = await _financialRecordService.GetAllAsync(from, to, type, category, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<FinancialRecordResponse>>.Ok(records));
     }
 
     [HttpGet("{id}")]

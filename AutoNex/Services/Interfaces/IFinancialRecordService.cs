@@ -1,10 +1,11 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.FinancialRecords;
 
 namespace AutoNex.Services.Interfaces;
 
 public interface IFinancialRecordService
 {
-    Task<List<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category);
+    Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize);
     Task<FinancialRecordResponse?> GetByIdAsync(int id);
     Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request);
     Task<FinancialRecordResponse?> UpdateAsync(int id, UpdateFinancialRecordRequest request);

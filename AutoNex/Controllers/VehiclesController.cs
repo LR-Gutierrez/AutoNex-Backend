@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Vehicles;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? search)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var vehicles = await _vehicleService.GetAllAsync(search);
-        return Ok(ApiResponse<List<VehicleResponse>>.Ok(vehicles));
+        var vehicles = await _vehicleService.GetAllAsync(search, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<VehicleResponse>>.Ok(vehicles));
     }
 
     [HttpGet("{id}")]

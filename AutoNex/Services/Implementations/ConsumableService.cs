@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Consumables;
 using AutoNex.Enums;
 using AutoNex.Helpers;
@@ -17,7 +18,7 @@ public class ConsumableService : IConsumableService
         _context = context;
     }
 
-    public async Task<List<ConsumableResponse>> GetAllAsync(string? category)
+    public async Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? category, int? page, int? pageSize)
     {
         var query = _context.Consumables
             .Include(c => c.Supplier)
@@ -26,11 +27,17 @@ public class ConsumableService : IConsumableService
         if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<ConsumableCategory>(category, true, out var cat))
             query = query.Where(c => c.Category == cat);
 
-        var items = await query
-            .OrderByDescending(c => c.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(c => c.CreatedAt);
 
-        return items.Select(c => c.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<ConsumableResponse>
+        {
+            Items = paged.Items.Select(c => c.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<List<ConsumableResponse>> GetLowStockAsync()

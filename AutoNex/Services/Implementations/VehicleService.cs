@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Vehicles;
 using AutoNex.Helpers;
 using AutoNex.Models;
@@ -16,7 +17,7 @@ public class VehicleService : IVehicleService
         _context = context;
     }
 
-    public async Task<List<VehicleResponse>> GetAllAsync(string? search)
+    public async Task<PagedResponse<VehicleResponse>> GetAllAsync(string? search, int? page, int? pageSize)
     {
         var query = _context.Vehicles
             .Include(v => v.Client)
@@ -27,11 +28,17 @@ public class VehicleService : IVehicleService
                 v.LicensePlate.Contains(search) ||
                 v.Client.FullName.Contains(search));
 
-        var vehicles = await query
-            .OrderByDescending(v => v.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(v => v.CreatedAt);
 
-        return vehicles.Select(v => v.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<VehicleResponse>
+        {
+            Items = paged.Items.Select(v => v.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<VehicleResponse?> GetByIdAsync(int id)

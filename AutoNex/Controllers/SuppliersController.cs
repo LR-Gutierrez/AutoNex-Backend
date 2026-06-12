@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var suppliers = await _supplierService.GetAllAsync();
-        return Ok(ApiResponse<List<SupplierResponse>>.Ok(suppliers));
+        var suppliers = await _supplierService.GetAllAsync(page, pageSize);
+        return Ok(ApiResponse<PagedResponse<SupplierResponse>>.Ok(suppliers));
     }
 
     [HttpGet("{id}")]

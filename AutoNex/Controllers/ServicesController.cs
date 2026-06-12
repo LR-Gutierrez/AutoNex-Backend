@@ -1,3 +1,4 @@
+using AutoNex.DTOs;
 using AutoNex.DTOs.Services;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -19,10 +20,10 @@ public class ServicesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var services = await _serviceCatalogService.GetAllAsync();
-        return Ok(ApiResponse<List<ServiceResponse>>.Ok(services));
+        var services = await _serviceCatalogService.GetAllAsync(page, pageSize);
+        return Ok(ApiResponse<PagedResponse<ServiceResponse>>.Ok(services));
     }
 
     [HttpGet("{id}")]

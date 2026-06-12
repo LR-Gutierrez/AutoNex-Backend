@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using AutoNex.DTOs;
 using AutoNex.DTOs.ServiceOrders;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -25,10 +26,12 @@ public class ServiceOrdersController : ControllerBase
         [FromQuery] DateTime? to,
         [FromQuery] int? clientId,
         [FromQuery] int? vehicleId,
-        [FromQuery] string? status)
+        [FromQuery] string? status,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize)
     {
-        var orders = await _serviceOrderService.GetAllAsync(from, to, clientId, vehicleId, status);
-        return Ok(ApiResponse<List<ServiceOrderResponse>>.Ok(orders));
+        var orders = await _serviceOrderService.GetAllAsync(from, to, clientId, vehicleId, status, page, pageSize);
+        return Ok(ApiResponse<PagedResponse<ServiceOrderResponse>>.Ok(orders));
     }
 
     [HttpGet("{id}")]

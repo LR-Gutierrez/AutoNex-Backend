@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.Helpers;
 using AutoNex.Models;
@@ -16,13 +17,21 @@ public class SupplierService : ISupplierService
         _context = context;
     }
 
-    public async Task<List<SupplierResponse>> GetAllAsync()
+    public async Task<PagedResponse<SupplierResponse>> GetAllAsync(int? page, int? pageSize)
     {
-        var suppliers = await _context.Suppliers
+        var query = _context.Suppliers
             .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync();
+            .AsQueryable();
 
-        return suppliers.Select(s => s.ToResponse()).ToList();
+        var paged = await query.ToPagedAsync(page, pageSize);
+
+        return new PagedResponse<SupplierResponse>
+        {
+            Items = paged.Items.Select(s => s.ToResponse()).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<SupplierResponse?> GetByIdAsync(int id)
