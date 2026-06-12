@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using AutoNex.Helpers;
+using FluentValidation;
 
 namespace AutoNex.Middleware;
 
@@ -30,15 +31,16 @@ public class ExceptionMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var statusCode = exception switch
+        var (statusCode, message) = exception switch
         {
-            UnauthorizedAccessException => HttpStatusCode.Unauthorized,
-            KeyNotFoundException => HttpStatusCode.NotFound,
-            InvalidOperationException => HttpStatusCode.Conflict,
-            _ => HttpStatusCode.InternalServerError
+            ValidationException ex => (HttpStatusCode.BadRequest, ex.Message),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, exception.Message),
+            KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
+            InvalidOperationException => (HttpStatusCode.Conflict, exception.Message),
+            _ => (HttpStatusCode.InternalServerError, "Ocurrió un error interno en el servidor")
         };
 
-        var response = ApiResponse<object>.Fail(exception.Message);
+        var response = ApiResponse<object>.Fail(message);
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
