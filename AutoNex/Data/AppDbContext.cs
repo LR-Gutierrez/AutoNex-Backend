@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<ServiceOrderItem> ServiceOrderItems => Set<ServiceOrderItem>();
     public DbSet<ServiceVariant> ServiceVariants => Set<ServiceVariant>();
     public DbSet<MileageAlert> MileageAlerts => Set<MileageAlert>();
+    public DbSet<FinancialRecord> FinancialRecords => Set<FinancialRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

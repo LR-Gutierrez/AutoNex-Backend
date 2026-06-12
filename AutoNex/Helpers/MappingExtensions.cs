@@ -1,5 +1,6 @@
 using AutoNex.DTOs.Clients;
 using AutoNex.DTOs.Consumables;
+using AutoNex.DTOs.FinancialRecords;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
@@ -100,6 +101,19 @@ public static class MappingExtensions
             variant.RecommendedMonths,
             variant.IsActive,
             variant.CreatedAt
+        );
+
+    public static FinancialRecordResponse ToResponse(this FinancialRecord record)
+        => new(
+            record.Id,
+            record.Type,
+            record.Category,
+            record.Amount,
+            record.Description,
+            record.Date,
+            record.UserId,
+            record.User.FullName,
+            record.CreatedAt
         );
 
     public static MileageAlertResponse ToResponse(this MileageAlert alert, int? currentKm = null)

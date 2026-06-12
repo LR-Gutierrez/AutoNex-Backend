@@ -46,6 +46,7 @@ builder.Services.AddScoped<IToolService, ToolService>();
 builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
 builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
+builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

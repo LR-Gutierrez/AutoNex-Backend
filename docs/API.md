@@ -388,6 +388,119 @@ Genera un recordatorio manual. (El envío real por WhatsApp se integrará en eta
 
 ---
 
+## Finanzas
+
+### `GET /api/financial-records`
+Lista registros financieros con filtros opcionales por fecha, tipo y categoría.
+
+**Query Parameters:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `from` | DateTime? | Fecha inicial (inclusive) |
+| `to` | DateTime? | Fecha final (inclusive) |
+| `type` | string? | `Income` o `Expense` |
+| `category` | string? | `Services`, `Suppliers`, `Rent`, `Payroll`, `Utilities`, `Other` |
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "type": "Income",
+      "category": "Services",
+      "amount": 450.00,
+      "description": "Mano de obra cambio de aceite",
+      "date": "2026-06-11T00:00:00Z",
+      "userId": 1,
+      "userName": "Admin AutoNex",
+      "createdAt": "2026-06-11T00:00:00Z"
+    }
+  ],
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+### `GET /api/financial-records/{id}`
+Obtiene un registro financiero por ID.
+
+### `POST /api/financial-records`
+Crea un registro financiero (ingreso o egreso).
+
+**Request:**
+```json
+{
+  "type": "Income",
+  "category": "Services",
+  "amount": 450.00,
+  "description": "Mano de obra cambio de aceite",
+  "date": "2026-06-11T00:00:00Z",
+  "userId": 1
+}
+```
+
+### `PUT /api/financial-records/{id}`
+Actualiza un registro financiero. Mismos campos que POST (excepto `userId`).
+
+### `DELETE /api/financial-records/{id}`
+Soft delete del registro financiero.
+
+### `GET /api/financial-records/summary`
+Resumen de ingresos vs egresos en un período.
+
+**Query Parameters:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `from` | DateTime? | Fecha inicial |
+| `to` | DateTime? | Fecha final |
+
+**Response:**
+```json
+{
+  "data": {
+    "totalIncome": 5000.00,
+    "totalExpenses": 3200.00,
+    "balance": 1800.00,
+    "incomeCount": 15,
+    "expenseCount": 8
+  },
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+### `GET /api/financial-records/by-category`
+Registros agrupados por categoría, ordenados por monto descendente.
+
+**Query Parameters:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `from` | DateTime? | Fecha inicial |
+| `to` | DateTime? | Fecha final |
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "category": "Services",
+      "totalAmount": 5000.00,
+      "count": 15
+    },
+    {
+      "category": "Suppliers",
+      "totalAmount": 2000.00,
+      "count": 5
+    }
+  ],
+  "success": true,
+  "message": "Operación exitosa"
+}
+```
+
+---
+
 ## Formato de respuesta estándar
 
 **Éxito:**

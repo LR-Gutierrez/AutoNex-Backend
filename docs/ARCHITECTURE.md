@@ -467,6 +467,6 @@ Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa
 
 ### Pendiente
 
-- [ ] **Etapa 5 — Finanzas**: CRUD de FinancialRecords, summary por período, agrupación por categoría
+- ✅ **Etapa 5 — Finanzas**: CRUD de FinancialRecords, summary por período, agrupación por categoría
 - [ ] **Etapa 6 — WhatsApp & Notificaciones**: Integración con Twilio/WhatsApp API, envío de recordatorios
 - [ ] **Infraestructura**: CORS, paginación en listados, rate limiting, health checks
