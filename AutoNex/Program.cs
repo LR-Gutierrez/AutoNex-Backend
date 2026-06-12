@@ -71,6 +71,7 @@ builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
 builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
 builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IInventoryMovementService, InventoryMovementService>();
 builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -81,6 +82,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

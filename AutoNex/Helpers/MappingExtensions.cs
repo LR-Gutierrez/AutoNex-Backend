@@ -1,6 +1,7 @@
 using AutoNex.DTOs.Clients;
 using AutoNex.DTOs.Consumables;
 using AutoNex.DTOs.FinancialRecords;
+using AutoNex.DTOs.InventoryMovements;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Notifications;
 using AutoNex.DTOs.Services;
@@ -103,6 +104,21 @@ public static class MappingExtensions
             variant.RecommendedMonths,
             variant.IsActive,
             variant.CreatedAt
+        );
+
+    public static InventoryMovementResponse ToResponse(this InventoryMovement movement)
+        => new(
+            movement.Id,
+            movement.ConsumableId,
+            movement.Consumable?.Name,
+            movement.ToolId,
+            movement.Tool?.Name,
+            movement.MovementType,
+            movement.Quantity,
+            movement.Reference,
+            movement.ReferenceId,
+            movement.Notes,
+            movement.CreatedAt
         );
 
     public static UserResponse ToResponse(this User user)

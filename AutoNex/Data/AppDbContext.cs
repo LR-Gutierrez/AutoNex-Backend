@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<MileageAlert> MileageAlerts => Set<MileageAlert>();
     public DbSet<FinancialRecord> FinancialRecords => Set<FinancialRecord>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
