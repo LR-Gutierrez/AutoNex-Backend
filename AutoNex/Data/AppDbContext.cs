@@ -11,6 +11,9 @@ public class AppDbContext : DbContext
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Consumable> Consumables => Set<Consumable>();
+    public DbSet<Tool> Tools => Set<Tool>();
+    public DbSet<Service> Services => Set<Service>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

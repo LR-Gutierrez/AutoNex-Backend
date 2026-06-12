@@ -41,6 +41,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IConsumableService, ConsumableService>();
+builder.Services.AddScoped<IToolService, ToolService>();
+builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

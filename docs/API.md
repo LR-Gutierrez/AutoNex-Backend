@@ -146,6 +146,106 @@ Soft delete del proveedor.
 
 ---
 
+## Consumibles
+
+### `GET /api/consumables`
+Lista consumibles. Opcional: `?category=Oil` (filtro por categoría).
+
+**Categorías:** `Oil`, `SparkPlug`, `Coolant`, `Grease`, `BrakeFluid`, `Other`
+
+### `GET /api/consumables/low-stock`
+Lista consumibles con stock por debajo del mínimo.
+
+### `GET /api/consumables/{id}`
+Obtiene un consumible.
+
+### `POST /api/consumables`
+Crea un consumible.
+
+**Request:**
+```json
+{
+  "name": "Aceite 20W50",
+  "category": "Oil",
+  "stockQuantity": 10,
+  "minStock": 2,
+  "unitPrice": 25.00,
+  "supplierId": 1
+}
+```
+`supplierId` es opcional.
+
+### `PUT /api/consumables/{id}`
+Actualiza un consumible. Mismos campos que POST.
+
+### `DELETE /api/consumables/{id}`
+Soft delete del consumible.
+
+---
+
+## Herramientas
+
+### `GET /api/tools`
+Lista herramientas. Opcional: `?category=Wrench&status=Available`.
+
+**Categorías:** `Jack`, `Wrench`, `Ratchet`, `Screwdriver`, `Hammer`, `Other`
+
+**Estados:** `Available`, `Damaged`, `Lost`
+
+### `GET /api/tools/{id}`
+Obtiene una herramienta.
+
+### `POST /api/tools`
+Crea una herramienta.
+
+**Request:**
+```json
+{
+  "name": "Gato Hidráulico",
+  "category": "Jack",
+  "quantity": 2,
+  "status": "Available",
+  "purchaseDate": "2026-01-15"
+}
+```
+`purchaseDate` es opcional.
+
+### `PUT /api/tools/{id}`
+Actualiza una herramienta. Mismos campos que POST.
+
+### `DELETE /api/tools/{id}`
+Soft delete de la herramienta.
+
+---
+
+## Catálogo de Servicios
+
+### `GET /api/services`
+Lista servicios del catálogo.
+
+### `GET /api/services/{id}`
+Obtiene un servicio.
+
+### `POST /api/services`
+Requiere rol **Admin**. Crea un servicio.
+
+**Request:**
+```json
+{
+  "name": "Cambio de Aceite",
+  "description": "Cambio de aceite y filtro",
+  "defaultPrice": 45.00
+}
+```
+
+### `PUT /api/services/{id}`
+Requiere rol **Admin**. Actualiza un servicio.
+
+### `DELETE /api/services/{id}`
+Requiere rol **Admin**. Soft delete del servicio.
+
+---
+
 ## Formato de respuesta estándar
 
 **Éxito:**

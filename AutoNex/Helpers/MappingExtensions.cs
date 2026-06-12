@@ -1,5 +1,8 @@
 using AutoNex.DTOs.Clients;
+using AutoNex.DTOs.Consumables;
+using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
+using AutoNex.DTOs.Tools;
 using AutoNex.DTOs.Vehicles;
 using AutoNex.Models;
 
@@ -48,5 +51,38 @@ public static class MappingExtensions
             supplier.Phone,
             supplier.Email,
             supplier.CreatedAt
+        );
+
+    public static ConsumableResponse ToResponse(this Consumable consumable)
+        => new(
+            consumable.Id,
+            consumable.Name,
+            consumable.Category.ToString(),
+            consumable.StockQuantity,
+            consumable.MinStock,
+            consumable.UnitPrice,
+            consumable.SupplierId,
+            consumable.Supplier?.Name,
+            consumable.CreatedAt
+        );
+
+    public static ToolResponse ToResponse(this Tool tool)
+        => new(
+            tool.Id,
+            tool.Name,
+            tool.Category.ToString(),
+            tool.Quantity,
+            tool.Status.ToString(),
+            tool.PurchaseDate,
+            tool.CreatedAt
+        );
+
+    public static ServiceResponse ToResponse(this Service service)
+        => new(
+            service.Id,
+            service.Name,
+            service.Description,
+            service.DefaultPrice,
+            service.CreatedAt
         );
 }
