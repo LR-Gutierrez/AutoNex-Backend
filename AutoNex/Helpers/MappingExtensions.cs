@@ -6,6 +6,7 @@ using AutoNex.DTOs.Notifications;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.DTOs.Tools;
+using AutoNex.DTOs.Users;
 using AutoNex.DTOs.Vehicles;
 using AutoNex.Models;
 
@@ -102,6 +103,17 @@ public static class MappingExtensions
             variant.RecommendedMonths,
             variant.IsActive,
             variant.CreatedAt
+        );
+
+    public static UserResponse ToResponse(this User user)
+        => new(
+            user.Id,
+            user.FullName,
+            user.Email,
+            user.Role,
+            user.Phone,
+            user.IsActive,
+            user.CreatedAt
         );
 
     public static NotificationResponse ToResponse(this Notification notification)

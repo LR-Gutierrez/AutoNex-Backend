@@ -56,6 +56,29 @@ Requiere rol **Admin**. Crea un nuevo usuario.
 
 ---
 
+## Usuarios
+
+### `GET /api/users`
+Lista todos los usuarios. Requiere rol **Admin**.
+
+### `GET /api/users/{id}`
+Obtiene un usuario por ID. Requiere rol **Admin**.
+
+### `PUT /api/users/{id}`
+Actualiza un usuario. Requiere rol **Admin**.
+
+**Request:**
+```json
+{
+  "fullName": "Juan Mecánico",
+  "email": "juan@autonex.com",
+  "role": "Mechanic",
+  "phone": "04121234567"
+}
+```
+
+---
+
 ## Clientes
 
 ### `GET /api/clients`
