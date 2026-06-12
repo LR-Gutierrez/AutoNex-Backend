@@ -44,6 +44,7 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IConsumableService, ConsumableService>();
 builder.Services.AddScoped<IToolService, ToolService>();
 builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
+builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

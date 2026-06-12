@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<Consumable> Consumables => Set<Consumable>();
     public DbSet<Tool> Tools => Set<Tool>();
     public DbSet<Service> Services => Set<Service>();
+    public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+    public DbSet<ServiceOrderItem> ServiceOrderItems => Set<ServiceOrderItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

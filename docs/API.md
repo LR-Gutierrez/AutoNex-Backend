@@ -246,6 +246,55 @@ Requiere rol **Admin**. Soft delete del servicio.
 
 ---
 
+## Órdenes de Servicio
+
+### `GET /api/service-orders`
+Lista órdenes. Filtros opcionales:
+`?from=2026-01-01&to=2026-12-31&clientId=1&vehicleId=1&status=Open`
+
+**Estados:** `Open`, `InProgress`, `Completed`, `Cancelled`
+
+### `GET /api/service-orders/{id}`
+Obtiene una orden con todos sus items.
+
+### `POST /api/service-orders`
+Crea una orden. Descuenta stock de consumibles automáticamente.
+
+**Request:**
+```json
+{
+  "vehicleId": 1,
+  "clientId": 1,
+  "currentKm": 50000,
+  "notes": "Cambio de aceite y filtro",
+  "items": [
+    {
+      "serviceId": 1,
+      "consumableId": 1,
+      "quantity": 1,
+      "unitPrice": 35.00
+    }
+  ]
+}
+```
+`consumableId` es opcional (si no se usa consumible).
+
+### `PUT /api/service-orders/{id}`
+Actualiza una orden (solo si no está `Completed` o `Cancelled`).
+Revierte el stock anterior y vuelve a descontar con los nuevos items.
+
+### `PATCH /api/service-orders/{id}/status`
+Cambia el estado de una orden.
+
+**Request:**
+```json
+{
+  "status": "Completed"
+}
+```
+
+---
+
 ## Formato de respuesta estándar
 
 **Éxito:**
