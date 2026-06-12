@@ -553,9 +553,6 @@ Envía una notificación manual por WhatsApp.
 }
 ```
 
-### `POST /api/mileage-alerts/{id}/send`
-Envía un recordatorio automático desde una alerta de kilometraje. Obtiene el teléfono del cliente y arma el mensaje automáticamente.
-
 ---
 
 ## Infraestructura
@@ -621,6 +618,8 @@ Todos los endpoints de listado aceptan los siguientes query parameters:
 | 400 | Bad Request (validación) |
 | 401 | Unauthorized (token faltante/inválido) |
 | 403 | Forbidden (rol sin permiso) |
+| 204 | No Content (DELETE) |
 | 404 | Not Found |
 | 409 | Conflict (ej. email duplicado, alerta ya existe) |
 | 415 | Unsupported Media Type (falta Content-Type) |
+| 429 | Too Many Requests (rate limit excedido) |

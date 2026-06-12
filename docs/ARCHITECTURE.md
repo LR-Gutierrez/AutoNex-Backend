@@ -437,7 +437,7 @@ AutoNex/
    - Cambio de aceite → próximo aviso en `CurrentKm + 5000`
    - Cambio de bujías → próximo aviso en `CurrentKm + 30000`
    - (Los umbrales se definen por tipo de servicio)
-4. Un job programado (o consulta manual) revisa diariamente los vehículos cuyo `NextAlertKm` está próximo
+4. Consulta manual via `GET /api/mileage-alerts?due=true` para revisar los vehículos cuyo `NextAlertKm` está próximo
 5. Cuando `CurrentKm + (EstimatedWeeklyKm * 2) >= NextAlertKm`, se dispara la notificación
 6. La notificación se envía vía WhatsApp (Twilio) con el mensaje configurado
 7. Queda registrada en la tabla `Notifications` con su estado
