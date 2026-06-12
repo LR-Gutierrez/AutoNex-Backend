@@ -18,16 +18,22 @@ public class FinancialRecordService : IFinancialRecordService
         _context = context;
     }
 
+    private static DateTime? ToUtc(DateTime? dt) =>
+        dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : null;
+
     public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize)
     {
         var query = _context.FinancialRecords
             .Include(r => r.User)
             .AsQueryable();
 
-        if (from.HasValue)
-            query = query.Where(r => r.Date >= from.Value);
-        if (to.HasValue)
-            query = query.Where(r => r.Date <= to.Value);
+        var utcFrom = ToUtc(from);
+        var utcTo = ToUtc(to);
+
+        if (utcFrom.HasValue)
+            query = query.Where(r => r.Date >= utcFrom.Value);
+        if (utcTo.HasValue)
+            query = query.Where(r => r.Date <= utcTo.Value);
         if (!string.IsNullOrWhiteSpace(type) && Enum.TryParse<FinancialRecordType>(type, true, out var parsedType))
             query = query.Where(r => r.Type == parsedType);
         if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<FinancialCategory>(category, true, out var parsedCategory))
@@ -101,10 +107,13 @@ public class FinancialRecordService : IFinancialRecordService
     {
         var query = _context.FinancialRecords.AsQueryable();
 
-        if (from.HasValue)
-            query = query.Where(r => r.Date >= from.Value);
-        if (to.HasValue)
-            query = query.Where(r => r.Date <= to.Value);
+        var utcFrom = ToUtc(from);
+        var utcTo = ToUtc(to);
+
+        if (utcFrom.HasValue)
+            query = query.Where(r => r.Date >= utcFrom.Value);
+        if (utcTo.HasValue)
+            query = query.Where(r => r.Date <= utcTo.Value);
 
         var records = await query.ToListAsync();
 
@@ -122,10 +131,13 @@ public class FinancialRecordService : IFinancialRecordService
     {
         var query = _context.FinancialRecords.AsQueryable();
 
-        if (from.HasValue)
-            query = query.Where(r => r.Date >= from.Value);
-        if (to.HasValue)
-            query = query.Where(r => r.Date <= to.Value);
+        var utcFrom = ToUtc(from);
+        var utcTo = ToUtc(to);
+
+        if (utcFrom.HasValue)
+            query = query.Where(r => r.Date >= utcFrom.Value);
+        if (utcTo.HasValue)
+            query = query.Where(r => r.Date <= utcTo.Value);
 
         var grouped = await query
             .GroupBy(r => r.Category)
