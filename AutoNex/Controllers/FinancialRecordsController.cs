@@ -61,7 +61,7 @@ public class FinancialRecordsController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Registro financiero no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Registro financiero eliminado exitosamente"));
+        return NoContent();
     }
 
     [HttpGet("summary")]

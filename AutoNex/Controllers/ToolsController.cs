@@ -37,6 +37,7 @@ public class ToolsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateToolRequest request)
     {
         var tool = await _toolService.CreateAsync(request);
@@ -45,6 +46,7 @@ public class ToolsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateToolRequest request)
     {
         var tool = await _toolService.UpdateAsync(id, request);
@@ -55,12 +57,13 @@ public class ToolsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _toolService.DeleteAsync(id);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Herramienta no encontrada"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Herramienta eliminada exitosamente"));
+        return NoContent();
     }
 }

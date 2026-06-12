@@ -61,6 +61,6 @@ public class ClientsController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Cliente no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Cliente eliminado exitosamente"));
+        return NoContent();
     }
 }

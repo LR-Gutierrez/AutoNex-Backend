@@ -64,7 +64,7 @@ public class ServicesController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Servicio no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Servicio eliminado exitosamente"));
+        return NoContent();
     }
 
     // Service Variants

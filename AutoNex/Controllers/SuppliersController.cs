@@ -37,6 +37,7 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateSupplierRequest request)
     {
         var supplier = await _supplierService.CreateAsync(request);
@@ -45,6 +46,7 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierRequest request)
     {
         var supplier = await _supplierService.UpdateAsync(id, request);
@@ -55,12 +57,13 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _supplierService.DeleteAsync(id);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Proveedor no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Proveedor eliminado exitosamente"));
+        return NoContent();
     }
 }

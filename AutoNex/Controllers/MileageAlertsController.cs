@@ -71,7 +71,7 @@ public class MileageAlertsController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Alerta desactivada exitosamente"));
+        return NoContent();
     }
 
     [HttpPost("{id}/send")]

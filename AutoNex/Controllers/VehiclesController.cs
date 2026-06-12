@@ -68,6 +68,6 @@ public class VehiclesController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Vehículo no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Vehículo eliminado exitosamente"));
+        return NoContent();
     }
 }

@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RegisterAsync(request);
-            return Ok(ApiResponse<AuthResponse>.Ok(result, "Usuario registrado exitosamente"));
+            return Created(string.Empty, ApiResponse<AuthResponse>.Ok(result, "Usuario registrado exitosamente"));
         }
         catch (InvalidOperationException ex)
         {

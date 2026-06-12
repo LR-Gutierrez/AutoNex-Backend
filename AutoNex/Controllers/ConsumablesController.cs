@@ -44,6 +44,7 @@ public class ConsumablesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateConsumableRequest request)
     {
         var consumable = await _consumableService.CreateAsync(request);
@@ -52,6 +53,7 @@ public class ConsumablesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateConsumableRequest request)
     {
         var consumable = await _consumableService.UpdateAsync(id, request);
@@ -62,12 +64,13 @@ public class ConsumablesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _consumableService.DeleteAsync(id);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Consumible no encontrado"));
 
-        return Ok(ApiResponse<object>.Ok(null!, "Consumible eliminado exitosamente"));
+        return NoContent();
     }
 }
