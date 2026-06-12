@@ -1,4 +1,5 @@
 using AutoNex.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
@@ -9,10 +10,12 @@ namespace AutoNex.Services.Implementations;
 public class TwilioService : ITwilioService
 {
     private readonly TwilioSettings _settings;
+    private readonly ILogger<TwilioService> _logger;
 
-    public TwilioService(IOptions<TwilioSettings> settings)
+    public TwilioService(IOptions<TwilioSettings> settings, ILogger<TwilioService> logger)
     {
         _settings = settings.Value;
+        _logger = logger;
     }
 
     public bool IsConfigured =>
@@ -39,8 +42,9 @@ public class TwilioService : ITwilioService
 
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error al enviar mensaje de WhatsApp a {To}", to);
             return false;
         }
     }

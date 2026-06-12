@@ -22,15 +22,7 @@ public class ServiceCatalogService : IServiceCatalogService
             .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<ServiceResponse>
-        {
-            Items = paged.Items.Select(s => s.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse());
     }
 
     public async Task<ServiceResponse?> GetByIdAsync(int id)

@@ -30,15 +30,7 @@ public class ToolService : IToolService
 
         query = query.OrderByDescending(t => t.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<ToolResponse>
-        {
-            Items = paged.Items.Select(t => t.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse());
     }
 
     public async Task<ToolResponse?> GetByIdAsync(int id)

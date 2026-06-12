@@ -2,7 +2,7 @@ using AutoNex.Enums;
 
 namespace AutoNex.DTOs.ServiceOrders;
 
-public class UpdateServiceOrderStatusRequest
+public record UpdateServiceOrderStatusRequest
 {
     public ServiceOrderStatus Status { get; set; }
 }

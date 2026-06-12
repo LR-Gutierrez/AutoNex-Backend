@@ -1,6 +1,6 @@
 namespace AutoNex.DTOs.ServiceOrders;
 
-public class CreateServiceOrderRequest
+public record CreateServiceOrderRequest
 {
     public int VehicleId { get; set; }
     public int ClientId { get; set; }
@@ -9,7 +9,7 @@ public class CreateServiceOrderRequest
     public List<CreateServiceOrderItemRequest> Items { get; set; } = [];
 }
 
-public class CreateServiceOrderItemRequest
+public record CreateServiceOrderItemRequest
 {
     public int ServiceId { get; set; }
     public int? ServiceVariantId { get; set; }

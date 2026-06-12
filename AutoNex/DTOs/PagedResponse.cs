@@ -1,6 +1,6 @@
 namespace AutoNex.DTOs;
 
-public class PagedResponse<T>
+public record PagedResponse<T>
 {
     public List<T> Items { get; set; } = [];
     public int Page { get; set; } = 1;

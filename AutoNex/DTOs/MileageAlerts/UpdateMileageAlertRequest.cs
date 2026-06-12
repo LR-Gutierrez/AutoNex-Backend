@@ -1,6 +1,6 @@
 namespace AutoNex.DTOs.MileageAlerts;
 
-public class UpdateMileageAlertRequest
+public record UpdateMileageAlertRequest
 {
     public int EstimatedWeeklyKm { get; set; }
 }

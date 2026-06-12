@@ -43,15 +43,7 @@ public class ServiceOrderService : IServiceOrderService
 
         query = query.OrderByDescending(o => o.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<ServiceOrderResponse>
-        {
-            Items = paged.Items.Select(o => MapToResponse(o)).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, MapToResponse);
     }
 
     public async Task<ServiceOrderResponse?> GetByIdAsync(int id)

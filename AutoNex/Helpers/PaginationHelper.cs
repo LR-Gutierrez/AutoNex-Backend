@@ -25,4 +25,25 @@ public static class PaginationHelper
             TotalCount = totalCount
         };
     }
+
+    public static async Task<PagedResponse<TResponse>> ToPagedResponseAsync<TEntity, TResponse>(
+        this IQueryable<TEntity> query, int? page, int? pageSize, Func<TEntity, TResponse> mapper)
+    {
+        var p = Math.Max(page ?? 1, 1);
+        var ps = Math.Clamp(pageSize ?? 20, 1, 100);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((p - 1) * ps)
+            .Take(ps)
+            .ToListAsync();
+
+        return new PagedResponse<TResponse>
+        {
+            Items = items.Select(mapper).ToList(),
+            Page = p,
+            PageSize = ps,
+            TotalCount = totalCount
+        };
+    }
 }

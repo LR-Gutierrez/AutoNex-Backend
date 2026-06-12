@@ -2,7 +2,7 @@ using AutoNex.Enums;
 
 namespace AutoNex.DTOs.Consumables;
 
-public class UpdateConsumableRequest
+public record UpdateConsumableRequest
 {
     public string Name { get; set; } = string.Empty;
     public ConsumableCategory Category { get; set; }

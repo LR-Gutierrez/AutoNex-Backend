@@ -3,11 +3,13 @@ using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AutoNex.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
+[EnableRateLimiting("AuthWindow")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -21,28 +23,14 @@ public class AuthController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        try
-        {
-            var result = await _authService.RegisterAsync(request);
-            return Created(string.Empty, ApiResponse<AuthResponse>.Ok(result, "Usuario registrado exitosamente"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ApiResponse<AuthResponse>.Fail(ex.Message));
-        }
+        var result = await _authService.RegisterAsync(request);
+        return Created(string.Empty, ApiResponse<AuthResponse>.Ok(result, "Usuario registrado exitosamente"));
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        try
-        {
-            var result = await _authService.LoginAsync(request);
-            return Ok(ApiResponse<AuthResponse>.Ok(result, "Inicio de sesión exitoso"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ApiResponse<AuthResponse>.Fail(ex.Message));
-        }
+        var result = await _authService.LoginAsync(request);
+        return Ok(ApiResponse<AuthResponse>.Ok(result, "Inicio de sesión exitoso"));
     }
 }

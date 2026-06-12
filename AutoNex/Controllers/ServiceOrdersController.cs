@@ -47,54 +47,29 @@ public class ServiceOrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateServiceOrderRequest request)
     {
-        try
-        {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var order = await _serviceOrderService.CreateAsync(request, userId);
-            return CreatedAtAction(nameof(GetById), new { id = order.Id },
-                ApiResponse<ServiceOrderResponse>.Ok(order, "Orden creada exitosamente"));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return BadRequest(ApiResponse<ServiceOrderResponse>.Fail(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ApiResponse<ServiceOrderResponse>.Fail(ex.Message));
-        }
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var order = await _serviceOrderService.CreateAsync(request, userId);
+        return CreatedAtAction(nameof(GetById), new { id = order.Id },
+            ApiResponse<ServiceOrderResponse>.Ok(order, "Orden creada exitosamente"));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceOrderRequest request)
     {
-        try
-        {
-            var order = await _serviceOrderService.UpdateAsync(id, request);
-            if (order is null)
-                return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
+        var order = await _serviceOrderService.UpdateAsync(id, request);
+        if (order is null)
+            return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
 
-            return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Orden actualizada exitosamente"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ApiResponse<ServiceOrderResponse>.Fail(ex.Message));
-        }
+        return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Orden actualizada exitosamente"));
     }
 
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateServiceOrderStatusRequest request)
     {
-        try
-        {
-            var order = await _serviceOrderService.UpdateStatusAsync(id, request);
-            if (order is null)
-                return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
+        var order = await _serviceOrderService.UpdateStatusAsync(id, request);
+        if (order is null)
+            return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
 
-            return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Estado actualizado exitosamente"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ApiResponse<ServiceOrderResponse>.Fail(ex.Message));
-        }
+        return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Estado actualizado exitosamente"));
     }
 }

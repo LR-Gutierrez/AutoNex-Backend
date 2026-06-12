@@ -37,15 +37,7 @@ public class FinancialRecordService : IFinancialRecordService
             .OrderByDescending(r => r.Date)
             .ThenByDescending(r => r.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<FinancialRecordResponse>
-        {
-            Items = paged.Items.Select(r => r.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, r => r.ToResponse());
     }
 
     public async Task<FinancialRecordResponse?> GetByIdAsync(int id)

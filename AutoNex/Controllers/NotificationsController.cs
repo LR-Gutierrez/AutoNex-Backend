@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AutoNex.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/notifications")]
 [Authorize]
 public class NotificationsController : ControllerBase
 {

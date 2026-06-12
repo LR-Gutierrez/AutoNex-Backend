@@ -1,6 +1,6 @@
 namespace AutoNex.DTOs.Services;
 
-public class UpdateServiceRequest
+public record UpdateServiceRequest
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

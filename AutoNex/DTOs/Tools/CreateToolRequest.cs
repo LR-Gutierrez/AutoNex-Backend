@@ -2,7 +2,7 @@ using AutoNex.Enums;
 
 namespace AutoNex.DTOs.Tools;
 
-public class CreateToolRequest
+public record CreateToolRequest
 {
     public string Name { get; set; } = string.Empty;
     public ToolCategory Category { get; set; }

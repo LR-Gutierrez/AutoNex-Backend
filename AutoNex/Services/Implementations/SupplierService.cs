@@ -23,15 +23,7 @@ public class SupplierService : ISupplierService
             .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<SupplierResponse>
-        {
-            Items = paged.Items.Select(s => s.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse());
     }
 
     public async Task<SupplierResponse?> GetByIdAsync(int id)

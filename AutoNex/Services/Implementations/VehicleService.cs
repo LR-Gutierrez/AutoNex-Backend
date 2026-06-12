@@ -30,15 +30,7 @@ public class VehicleService : IVehicleService
 
         query = query.OrderByDescending(v => v.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<VehicleResponse>
-        {
-            Items = paged.Items.Select(v => v.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, v => v.ToResponse());
     }
 
     public async Task<VehicleResponse?> GetByIdAsync(int id)

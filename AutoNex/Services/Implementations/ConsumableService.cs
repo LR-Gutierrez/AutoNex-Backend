@@ -29,15 +29,7 @@ public class ConsumableService : IConsumableService
 
         query = query.OrderByDescending(c => c.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<ConsumableResponse>
-        {
-            Items = paged.Items.Select(c => c.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse());
     }
 
     public async Task<List<ConsumableResponse>> GetLowStockAsync()

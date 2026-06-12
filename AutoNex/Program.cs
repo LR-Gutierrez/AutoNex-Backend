@@ -37,6 +37,12 @@ builder.Services.AddRateLimiter(options =>
         opt.Window = TimeSpan.FromMinutes(1);
         opt.QueueLimit = 0;
     });
+    options.AddFixedWindowLimiter("AuthWindow", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -42,16 +42,9 @@ public class MileageAlertsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateMileageAlertRequest request)
     {
-        try
-        {
-            var alert = await _mileageAlertService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = alert.Id },
-                ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada exitosamente"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ApiResponse<MileageAlertResponse>.Fail(ex.Message));
-        }
+        var alert = await _mileageAlertService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = alert.Id },
+            ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada exitosamente"));
     }
 
     [HttpPut("{id}")]
@@ -77,17 +70,10 @@ public class MileageAlertsController : ControllerBase
     [HttpPost("{id}/send")]
     public async Task<IActionResult> SendReminder(int id)
     {
-        try
-        {
-            var notification = await _notificationService.SendReminderAsync(id);
-            if (notification is null)
-                return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
+        var notification = await _notificationService.SendReminderAsync(id);
+        if (notification is null)
+            return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
 
-            return Ok(ApiResponse<NotificationResponse>.Ok(notification, "Recordatorio enviado exitosamente"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<object>.Fail(ex.Message));
-        }
+        return Ok(ApiResponse<NotificationResponse>.Ok(notification, "Recordatorio enviado exitosamente"));
     }
 }

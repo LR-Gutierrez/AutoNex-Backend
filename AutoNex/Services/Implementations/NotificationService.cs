@@ -36,15 +36,7 @@ public class NotificationService : INotificationService
 
         query = query.OrderByDescending(n => n.CreatedAt);
 
-        var paged = await query.ToPagedAsync(page, pageSize);
-
-        return new PagedResponse<NotificationResponse>
-        {
-            Items = paged.Items.Select(n => n.ToResponse()).ToList(),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
+        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse());
     }
 
     public async Task<NotificationResponse?> GetByIdAsync(int id)

@@ -1,6 +1,6 @@
 namespace AutoNex.DTOs.ServiceOrders;
 
-public class UpdateServiceOrderRequest
+public record UpdateServiceOrderRequest
 {
     public int CurrentKm { get; set; }
     public string? Notes { get; set; }
