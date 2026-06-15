@@ -247,13 +247,45 @@ Soft delete del consumible.
 
 ---
 
+## Categorías de Herramientas
+
+### `GET /api/tool-categories`
+
+Lista categorías. Opcional: `?page=1&pageSize=10`.
+
+### `GET /api/tool-categories/{id}`
+
+Obtiene una categoría por ID.
+
+### `POST /api/tool-categories`
+
+Requiere rol **Admin**. Crea una categoría.
+
+**Request:**
+
+```json
+{
+  "name": "Gato Hidráulico"
+}
+```
+
+### `PUT /api/tool-categories/{id}`
+
+Requiere rol **Admin**. Actualiza una categoría. Mismos campos que POST.
+
+### `DELETE /api/tool-categories/{id}`
+
+Requiere rol **Admin**. Soft delete de la categoría.
+
+---
+
 ## Herramientas
 
 ### `GET /api/tools`
 
-Lista herramientas. Opcional: `?category=Wrench&status=Available`.
+Lista herramientas. Opcional: `?categoryName=Gato&status=Available&page=1&pageSize=10`.
 
-**Categorías:** `Jack`, `Wrench`, `Ratchet`, `Screwdriver`, `Hammer`, `Other`
+`categoryName` filtra por nombre parcial de la categoría.
 
 **Estados:** `Available`, `Damaged`, `Lost`
 
@@ -263,31 +295,33 @@ Obtiene una herramienta.
 
 ### `POST /api/tools`
 
-Crea una herramienta.
+Requiere rol **Admin**. Crea una herramienta.
 
 **Request:**
 
 ```json
 {
   "name": "Gato Hidráulico",
-  "category": "Jack",
+  "toolCategoryId": 1,
   "quantity": 2,
   "status": "Available",
   "purchaseDate": "2026-01-15"
 }
 ```
 
-`purchaseDate` es opcional.
+`purchaseDate` es opcional. `toolCategoryId` debe corresponder a una categoría existente en `/api/tool-categories`.
 
 ### `PUT /api/tools/{id}`
 
-Actualiza una herramienta. Mismos campos que POST.
+Requiere rol **Admin**. Actualiza una herramienta. Mismos campos que POST.
 
 ### `DELETE /api/tools/{id}`
 
-Soft delete de la herramienta.
+Requiere rol **Admin**. Soft delete de la herramienta.
 
 ---
+
+## Catálogo de Servicios
 
 ## Catálogo de Servicios
 

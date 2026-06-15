@@ -5,7 +5,7 @@ namespace AutoNex.Services.Interfaces;
 
 public interface IToolService
 {
-    Task<PagedResponse<ToolResponse>> GetAllAsync(string? category, string? status, int? page, int? pageSize);
+    Task<PagedResponse<ToolResponse>> GetAllAsync(string? categoryName, string? status, int? page, int? pageSize);
     Task<ToolResponse?> GetByIdAsync(int id);
     Task<ToolResponse> CreateAsync(CreateToolRequest request);
     Task<ToolResponse?> UpdateAsync(int id, UpdateToolRequest request);

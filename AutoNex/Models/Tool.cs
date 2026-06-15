@@ -6,7 +6,8 @@ public class Tool
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public ToolCategory Category { get; set; }
+    public int ToolCategoryId { get; set; }
+    public ToolCategory ToolCategory { get; set; } = null!;
     public int Quantity { get; set; }
     public ToolStatus Status { get; set; } = ToolStatus.Available;
     public DateTime? PurchaseDate { get; set; }

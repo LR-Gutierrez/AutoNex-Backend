@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<FinancialRecord> FinancialRecords => Set<FinancialRecord>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
+    public DbSet<ToolCategory> ToolCategories => Set<ToolCategory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

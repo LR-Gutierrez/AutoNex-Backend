@@ -6,6 +6,7 @@ using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Notifications;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
+using AutoNex.DTOs.ToolCategories;
 using AutoNex.DTOs.Tools;
 using AutoNex.DTOs.Users;
 using AutoNex.DTOs.Vehicles;
@@ -75,11 +76,19 @@ public static class MappingExtensions
         => new(
             tool.Id,
             tool.Name,
-            tool.Category.ToString(),
+            tool.ToolCategoryId,
+            tool.ToolCategory.Name,
             tool.Quantity,
             tool.Status.ToString(),
             tool.PurchaseDate,
             tool.CreatedAt
+        );
+
+    public static ToolCategoryResponse ToResponse(this ToolCategory category)
+        => new(
+            category.Id,
+            category.Name,
+            category.CreatedAt
         );
 
     public static ServiceResponse ToResponse(this Service service)

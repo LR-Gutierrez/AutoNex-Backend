@@ -11,8 +11,8 @@ public class CreateToolValidator : AbstractValidator<CreateToolRequest>
             .NotEmpty().WithMessage("El nombre es obligatorio")
             .MaximumLength(200);
 
-        RuleFor(x => x.Category)
-            .IsInEnum().WithMessage("La categoría no es válida");
+        RuleFor(x => x.ToolCategoryId)
+            .GreaterThan(0).WithMessage("La categoría es obligatoria");
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0).WithMessage("La cantidad debe ser mayor a 0");

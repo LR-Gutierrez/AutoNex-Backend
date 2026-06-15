@@ -17,11 +17,14 @@ public class ToolConfiguration : IEntityTypeConfiguration<Tool>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(t => t.Category)
-            .HasColumnName("category")
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(t => t.ToolCategoryId)
+            .HasColumnName("tool_category_id")
+            .IsRequired();
+
+        builder.HasOne(t => t.ToolCategory)
+            .WithMany()
+            .HasForeignKey(t => t.ToolCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(t => t.Quantity)
             .HasColumnName("quantity");

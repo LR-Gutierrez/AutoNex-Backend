@@ -73,6 +73,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IConsumableService, ConsumableService>();
 builder.Services.AddScoped<IToolService, ToolService>();
+builder.Services.AddScoped<IToolCategoryService, ToolCategoryService>();
 builder.Services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
 builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
