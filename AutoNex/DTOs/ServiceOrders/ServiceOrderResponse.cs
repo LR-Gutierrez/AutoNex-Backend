@@ -11,6 +11,8 @@ public record ServiceOrderResponse(
     int UserId,
     string UserName,
     int CurrentKm,
+    int? EstimatedDailyKm,
+    int? DaysPerWeek,
     DateTime Date,
     ServiceOrderStatus Status,
     decimal TotalAmount,

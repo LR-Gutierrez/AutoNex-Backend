@@ -17,6 +17,8 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
         builder.Property(o => o.UserId).HasColumnName("user_id");
 
         builder.Property(o => o.CurrentKm).HasColumnName("current_km");
+        builder.Property(o => o.EstimatedDailyKm).HasColumnName("estimated_daily_km");
+        builder.Property(o => o.DaysPerWeek).HasColumnName("days_per_week");
 
         builder.Property(o => o.Date).HasColumnName("date");
 

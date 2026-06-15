@@ -12,12 +12,10 @@ namespace AutoNex.Services.Implementations;
 public class ServiceOrderService : IServiceOrderService
 {
     private readonly AppDbContext _context;
-    private readonly IMileageAlertService _mileageAlertService;
 
-    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService)
+    public ServiceOrderService(AppDbContext context)
     {
         _context = context;
-        _mileageAlertService = mileageAlertService;
     }
 
     public async Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
@@ -72,6 +70,8 @@ public class ServiceOrderService : IServiceOrderService
             ClientId = request.ClientId,
             UserId = userId,
             CurrentKm = request.CurrentKm,
+            EstimatedDailyKm = request.EstimatedDailyKm,
+            DaysPerWeek = request.DaysPerWeek,
             Notes = request.Notes,
             Status = ServiceOrderStatus.Open
         };
@@ -149,6 +149,8 @@ public class ServiceOrderService : IServiceOrderService
         order.Items.Clear();
 
         order.CurrentKm = request.CurrentKm;
+        order.EstimatedDailyKm = request.EstimatedDailyKm;
+        order.DaysPerWeek = request.DaysPerWeek;
         order.Notes = request.Notes;
 
         decimal total = 0;
@@ -196,25 +198,30 @@ public class ServiceOrderService : IServiceOrderService
 
     public async Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request)
     {
-        var order = await _context.ServiceOrders.FindAsync(id);
+        var order = await _context.ServiceOrders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
         if (order is null) return null;
 
         if (order.Status == ServiceOrderStatus.Completed || order.Status == ServiceOrderStatus.Cancelled)
             throw new InvalidOperationException("No se puede cambiar el estado de una orden completada o cancelada");
 
+        if (request.Status == ServiceOrderStatus.Cancelled)
+        {
+            foreach (var item in order.Items.Where(i => i.ConsumableId.HasValue))
+            {
+                var consumableId = item.ConsumableId.GetValueOrDefault();
+                var consumable = await _context.Consumables.FindAsync(consumableId);
+                if (consumable is not null)
+                {
+                    consumable.StockQuantity += item.Quantity;
+                    consumable.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+        }
+
         order.Status = request.Status;
         order.UpdatedAt = DateTime.UtcNow;
-
-        if (request.Status == ServiceOrderStatus.Completed)
-        {
-            var itemIds = await _context.ServiceOrderItems
-                .Where(i => i.ServiceOrderId == id)
-                .Select(i => i.Id)
-                .ToListAsync();
-
-            await _mileageAlertService.UpdateAlertFromServiceOrderAsync(
-                order.VehicleId, order.CurrentKm, itemIds);
-        }
 
         await _context.SaveChangesAsync();
         return (await GetByIdAsync(id))!;
@@ -231,6 +238,8 @@ public class ServiceOrderService : IServiceOrderService
             order.UserId,
             order.User.FullName,
             order.CurrentKm,
+            order.EstimatedDailyKm,
+            order.DaysPerWeek,
             order.Date,
             order.Status,
             order.TotalAmount,

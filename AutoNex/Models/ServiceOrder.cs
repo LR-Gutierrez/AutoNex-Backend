@@ -9,6 +9,8 @@ public class ServiceOrder
     public int ClientId { get; set; }
     public int UserId { get; set; }
     public int CurrentKm { get; set; }
+    public int? EstimatedDailyKm { get; set; }
+    public int? DaysPerWeek { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public ServiceOrderStatus Status { get; set; } = ServiceOrderStatus.Open;
     public decimal TotalAmount { get; set; }

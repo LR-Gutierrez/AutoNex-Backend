@@ -163,22 +163,22 @@ public static class MappingExtensions
             record.CreatedAt
         );
 
-    public static MileageAlertResponse ToResponse(this MileageAlert alert, int? currentKm = null)
+    public static MileageAlertResponse ToResponse(this MileageAlert alert, int currentKm)
     {
-        var effectiveKm = currentKm ?? alert.LastRecordedKm;
-        var remainingKm = alert.NextAlertKm - effectiveKm;
-        var isDue = alert.IsActive && effectiveKm + (alert.EstimatedWeeklyKm * 2) >= alert.NextAlertKm;
+        var remainingKm = alert.NextAlertKm - currentKm;
+        var isDue = alert.IsActive && currentKm + (alert.EstimatedWeeklyKm * 2) >= alert.NextAlertKm;
 
         return new MileageAlertResponse(
             alert.Id,
             alert.VehicleId,
             $"{alert.Vehicle.Brand} {alert.Vehicle.Model} ({alert.Vehicle.LicensePlate})",
-            alert.LastRecordedKm,
+            currentKm,
             alert.EstimatedWeeklyKm,
             alert.NextAlertKm,
             remainingKm > 0 ? remainingKm : 0,
             isDue,
             alert.LastAlertDate,
+            alert.NextAlertDate,
             alert.IsActive,
             alert.CreatedAt
         );

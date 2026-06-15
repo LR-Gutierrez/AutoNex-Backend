@@ -98,9 +98,15 @@ public class NotificationService : INotificationService
         if (string.IsNullOrWhiteSpace(phone))
             throw new InvalidOperationException("El cliente no tiene teléfono registrado");
 
+        var currentKm = await _context.ServiceOrders
+            .Where(o => o.VehicleId == alert.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
+            .OrderByDescending(o => o.Date)
+            .Select(o => (int?)o.CurrentKm)
+            .FirstOrDefaultAsync() ?? 0;
+
         var vehicleInfo = $"{alert.Vehicle.Brand} {alert.Vehicle.Model} ({alert.Vehicle.LicensePlate})";
         var message = $"Recordatorio: El vehículo {vehicleInfo} requiere atención. " +
-                      $"Kilometraje actual: {alert.LastRecordedKm} km. " +
+                      $"Kilometraje actual: {currentKm} km. " +
                       $"Próxima alerta: {alert.NextAlertKm} km.";
 
         var request = new SendNotificationRequest(

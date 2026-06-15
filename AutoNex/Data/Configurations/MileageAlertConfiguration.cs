@@ -15,9 +15,6 @@ public class MileageAlertConfiguration : IEntityTypeConfiguration<MileageAlert>
         builder.Property(a => a.VehicleId)
             .HasColumnName("vehicle_id");
 
-        builder.Property(a => a.LastRecordedKm)
-            .HasColumnName("last_recorded_km");
-
         builder.Property(a => a.EstimatedWeeklyKm)
             .HasColumnName("estimated_weekly_km");
 
@@ -26,6 +23,9 @@ public class MileageAlertConfiguration : IEntityTypeConfiguration<MileageAlert>
 
         builder.Property(a => a.LastAlertDate)
             .HasColumnName("last_alert_date");
+
+        builder.Property(a => a.NextAlertDate)
+            .HasColumnName("next_alert_date");
 
         builder.Property(a => a.IsActive)
             .HasColumnName("is_active");

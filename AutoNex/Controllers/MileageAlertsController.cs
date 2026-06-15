@@ -67,6 +67,21 @@ public class MileageAlertsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("from-order/{orderId}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateFromOrder(int orderId)
+    {
+        try
+        {
+            var alert = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId);
+            return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada/actualizada exitosamente"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
     [HttpPost("{id}/send")]
     public async Task<IActionResult> SendReminder(int id)
     {
