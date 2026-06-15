@@ -21,8 +21,9 @@ public record ServiceOrderResponse(
 
 public record ServiceOrderItemResponse(
     int Id,
-    int ServiceId,
-    string ServiceName,
+    string Type,
+    int? ServiceId,
+    string? ServiceName,
     int? ConsumableId,
     string? ConsumableName,
     int Quantity,

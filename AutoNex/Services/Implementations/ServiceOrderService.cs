@@ -79,8 +79,14 @@ public class ServiceOrderService : IServiceOrderService
         decimal total = 0;
         foreach (var itemReq in request.Items)
         {
-            var service = await _context.Services.FindAsync(itemReq.ServiceId)
-                ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
+            if (itemReq.Type == "Service")
+            {
+                if (!itemReq.ServiceId.HasValue)
+                    throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
+
+                var service = await _context.Services.FindAsync(itemReq.ServiceId.Value)
+                    ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
+            }
 
             if (itemReq.ConsumableId.HasValue)
             {
@@ -96,7 +102,7 @@ public class ServiceOrderService : IServiceOrderService
 
             var item = new ServiceOrderItem
             {
-                ServiceId = itemReq.ServiceId,
+                ServiceId = itemReq.Type == "Service" ? itemReq.ServiceId : null,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -148,8 +154,14 @@ public class ServiceOrderService : IServiceOrderService
         decimal total = 0;
         foreach (var itemReq in request.Items)
         {
-            var service = await _context.Services.FindAsync(itemReq.ServiceId)
-                ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
+            if (itemReq.Type == "Service")
+            {
+                if (!itemReq.ServiceId.HasValue)
+                    throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
+
+                var service = await _context.Services.FindAsync(itemReq.ServiceId.Value)
+                    ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
+            }
 
             if (itemReq.ConsumableId.HasValue)
             {
@@ -165,7 +177,7 @@ public class ServiceOrderService : IServiceOrderService
 
             var item = new ServiceOrderItem
             {
-                ServiceId = itemReq.ServiceId,
+                ServiceId = itemReq.Type == "Service" ? itemReq.ServiceId : null,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -226,8 +238,9 @@ public class ServiceOrderService : IServiceOrderService
             order.CreatedAt,
             order.Items.Select(i => new ServiceOrderItemResponse(
                 i.Id,
+                i.ServiceId.HasValue ? "Service" : "Consumable",
                 i.ServiceId,
-                i.Service?.Name ?? "",
+                i.Service?.Name,
                 i.ConsumableId,
                 i.Consumable?.Name,
                 i.Quantity,

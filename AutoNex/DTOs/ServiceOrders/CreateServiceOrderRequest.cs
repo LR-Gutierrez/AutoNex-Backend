@@ -9,9 +9,10 @@ public record CreateServiceOrderRequest
     public List<CreateServiceOrderItemRequest> Items { get; set; } = [];
 }
 
-public record CreateServiceOrderItemRequest
+public class CreateServiceOrderItemRequest
 {
-    public int ServiceId { get; set; }
+    public string Type { get; set; } = "Service";
+    public int? ServiceId { get; set; }
     public int? ConsumableId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }

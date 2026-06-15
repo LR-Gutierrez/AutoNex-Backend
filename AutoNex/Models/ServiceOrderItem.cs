@@ -4,7 +4,7 @@ public class ServiceOrderItem
 {
     public int Id { get; set; }
     public int ServiceOrderId { get; set; }
-    public int ServiceId { get; set; }
+    public int? ServiceId { get; set; }
     public int? ConsumableId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
