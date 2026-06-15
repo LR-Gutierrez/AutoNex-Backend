@@ -12,7 +12,6 @@ public record CreateServiceOrderRequest
 public record CreateServiceOrderItemRequest
 {
     public int ServiceId { get; set; }
-    public int? ServiceVariantId { get; set; }
     public int? ConsumableId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }

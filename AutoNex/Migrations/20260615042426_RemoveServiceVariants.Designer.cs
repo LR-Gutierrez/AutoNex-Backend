@@ -3,6 +3,7 @@ using System;
 using AutoNex.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutoNex.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260615042426_RemoveServiceVariants")]
+    partial class RemoveServiceVariants
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -373,19 +376,14 @@ namespace AutoNex.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
 
-                    b.Property<int?>("MaxKmInterval")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_km_interval");
-
-                    b.Property<int?>("MinKmInterval")
-                        .HasColumnType("integer")
-                        .HasColumnName("min_km_interval");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
+
+                    b.Property<int?>("RecommendedKmInterval")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("RecommendedMonths")
                         .HasColumnType("integer")

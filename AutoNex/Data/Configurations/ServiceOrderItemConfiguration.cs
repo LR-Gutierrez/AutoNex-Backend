@@ -15,7 +15,6 @@ public class ServiceOrderItemConfiguration : IEntityTypeConfiguration<ServiceOrd
         builder.Property(i => i.ServiceOrderId).HasColumnName("service_order_id");
         builder.Property(i => i.ServiceId).HasColumnName("service_id");
         builder.Property(i => i.ConsumableId).HasColumnName("consumable_id");
-        builder.Property(i => i.ServiceVariantId).HasColumnName("service_variant_id");
 
         builder.Property(i => i.Quantity).HasColumnName("quantity");
 
@@ -46,9 +45,5 @@ public class ServiceOrderItemConfiguration : IEntityTypeConfiguration<ServiceOrd
             .HasForeignKey(i => i.ConsumableId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(i => i.ServiceVariant)
-            .WithMany()
-            .HasForeignKey(i => i.ServiceVariantId)
-            .OnDelete(DeleteBehavior.SetNull);
     }
 }

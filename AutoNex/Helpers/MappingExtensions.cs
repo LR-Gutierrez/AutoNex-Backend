@@ -97,22 +97,10 @@ public static class MappingExtensions
             service.Name,
             service.Description,
             service.DefaultPrice,
-            service.RecommendedKmInterval,
+            service.MinKmInterval,
+            service.MaxKmInterval,
+            service.RecommendedMonths,
             service.CreatedAt
-        );
-
-    public static ServiceVariantResponse ToResponse(this ServiceVariant variant)
-        => new(
-            variant.Id,
-            variant.ServiceId,
-            variant.Service.Name,
-            variant.Name,
-            variant.Description,
-            variant.MinKmInterval,
-            variant.MaxKmInterval,
-            variant.RecommendedMonths,
-            variant.IsActive,
-            variant.CreatedAt
         );
 
     public static InventoryMovementResponse ToResponse(this InventoryMovement movement)

@@ -16,7 +16,6 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
     public DbSet<ServiceOrderItem> ServiceOrderItems => Set<ServiceOrderItem>();
-    public DbSet<ServiceVariant> ServiceVariants => Set<ServiceVariant>();
     public DbSet<MileageAlert> MileageAlerts => Set<MileageAlert>();
     public DbSet<FinancialRecord> FinancialRecords => Set<FinancialRecord>();
     public DbSet<Notification> Notifications => Set<Notification>();

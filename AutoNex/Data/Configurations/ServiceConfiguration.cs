@@ -25,6 +25,15 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
             .HasColumnName("default_price")
             .HasPrecision(18, 2);
 
+        builder.Property(s => s.MinKmInterval)
+            .HasColumnName("min_km_interval");
+
+        builder.Property(s => s.MaxKmInterval)
+            .HasColumnName("max_km_interval");
+
+        builder.Property(s => s.RecommendedMonths)
+            .HasColumnName("recommended_months");
+
         builder.Property(s => s.IsDeleted)
             .HasColumnName("is_deleted");
 

@@ -129,10 +129,9 @@ public class MileageAlertService : IMileageAlertService
             }
         }
 
-        // Step 2: Calculate NextAlertKm using ServiceVariants or fallback to Service.RecommendedKmInterval
+        // Step 2: Calculate NextAlertKm using Service.MaxKmInterval
         var items = await _context.ServiceOrderItems
             .Where(i => orderItemIds.Contains(i.Id))
-            .Include(i => i.ServiceVariant)
             .Include(i => i.Service)
             .ToListAsync();
 
@@ -140,15 +139,10 @@ public class MileageAlertService : IMileageAlertService
 
         foreach (var item in items)
         {
-            if (item.ServiceVariant is not null)
+            if (item.Service?.MaxKmInterval is not null
+                && item.Service.MaxKmInterval.Value > maxKmInterval)
             {
-                if (item.ServiceVariant.MaxKmInterval > maxKmInterval)
-                    maxKmInterval = item.ServiceVariant.MaxKmInterval;
-            }
-            else if (item.Service?.RecommendedKmInterval is not null)
-            {
-                if (item.Service.RecommendedKmInterval.Value > maxKmInterval)
-                    maxKmInterval = item.Service.RecommendedKmInterval.Value;
+                maxKmInterval = item.Service.MaxKmInterval.Value;
             }
         }
 

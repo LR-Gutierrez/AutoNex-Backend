@@ -29,8 +29,6 @@ public class ServiceOrderService : IServiceOrderService
             .Include(o => o.Items)
                 .ThenInclude(i => i.Service)
             .Include(o => o.Items)
-                .ThenInclude(i => i.ServiceVariant)
-            .Include(o => o.Items)
                 .ThenInclude(i => i.Consumable)
             .AsQueryable();
 
@@ -54,8 +52,6 @@ public class ServiceOrderService : IServiceOrderService
             .Include(o => o.User)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Service)
-            .Include(o => o.Items)
-                .ThenInclude(i => i.ServiceVariant)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Consumable)
             .FirstOrDefaultAsync(o => o.Id == id);
@@ -101,7 +97,6 @@ public class ServiceOrderService : IServiceOrderService
             var item = new ServiceOrderItem
             {
                 ServiceId = itemReq.ServiceId,
-                ServiceVariantId = itemReq.ServiceVariantId,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -171,7 +166,6 @@ public class ServiceOrderService : IServiceOrderService
             var item = new ServiceOrderItem
             {
                 ServiceId = itemReq.ServiceId,
-                ServiceVariantId = itemReq.ServiceVariantId,
                 ConsumableId = itemReq.ConsumableId,
                 Quantity = itemReq.Quantity,
                 UnitPrice = itemReq.UnitPrice
@@ -234,8 +228,6 @@ public class ServiceOrderService : IServiceOrderService
                 i.Id,
                 i.ServiceId,
                 i.Service?.Name ?? "",
-                i.ServiceVariantId,
-                i.ServiceVariant?.Name,
                 i.ConsumableId,
                 i.Consumable?.Name,
                 i.Quantity,
