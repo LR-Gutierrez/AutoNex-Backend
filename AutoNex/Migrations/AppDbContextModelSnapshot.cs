@@ -263,9 +263,9 @@ namespace AutoNex.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_alert_date");
 
-                    b.Property<int>("LastRecordedKm")
-                        .HasColumnType("integer")
-                        .HasColumnName("last_recorded_km");
+                    b.Property<DateTime?>("NextAlertDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_alert_date");
 
                     b.Property<int>("NextAlertKm")
                         .HasColumnType("integer")
@@ -423,6 +423,14 @@ namespace AutoNex.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("date");
+
+                    b.Property<int?>("DaysPerWeek")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_per_week");
+
+                    b.Property<int?>("EstimatedDailyKm")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_daily_km");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
