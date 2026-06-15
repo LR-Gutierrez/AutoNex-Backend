@@ -22,6 +22,7 @@ public class ToolService : IToolService
     {
         var query = _context.Tools
             .Include(t => t.ToolCategory)
+            .Where(t => !t.ToolCategory.IsDeleted)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(categoryName))

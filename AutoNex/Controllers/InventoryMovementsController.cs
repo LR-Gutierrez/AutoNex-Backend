@@ -23,7 +23,7 @@ public class InventoryMovementsController : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] int? consumableId, [FromQuery] int? toolId, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
         var movements = await _inventoryMovementService.GetAllAsync(consumableId, toolId, page, pageSize);
-        return Ok(ApiResponse<List<InventoryMovementResponse>>.Ok(movements));
+        return Ok(ApiResponse<PagedResponse<InventoryMovementResponse>>.Ok(movements));
     }
 
     [HttpGet("{id}")]

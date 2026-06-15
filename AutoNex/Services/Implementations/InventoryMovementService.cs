@@ -1,4 +1,5 @@
 using AutoNex.Data;
+using AutoNex.DTOs;
 using AutoNex.DTOs.InventoryMovements;
 using AutoNex.Helpers;
 using AutoNex.Models;
@@ -16,7 +17,7 @@ public class InventoryMovementService : IInventoryMovementService
         _context = context;
     }
 
-    public async Task<List<InventoryMovementResponse>> GetAllAsync(int? consumableId, int? toolId, int? page, int? pageSize)
+    public async Task<PagedResponse<InventoryMovementResponse>> GetAllAsync(int? consumableId, int? toolId, int? page, int? pageSize)
     {
         var query = _context.InventoryMovements
             .Include(m => m.Consumable)
@@ -28,13 +29,9 @@ public class InventoryMovementService : IInventoryMovementService
         if (toolId.HasValue)
             query = query.Where(m => m.ToolId == toolId.Value);
 
-        var movements = await query
+        return await query
             .OrderByDescending(m => m.CreatedAt)
-            .Skip(((page ?? 1) - 1) * (pageSize ?? 20))
-            .Take(pageSize ?? 20)
-            .ToListAsync();
-
-        return movements.Select(m => m.ToResponse()).ToList();
+            .ToPagedResponseAsync(page, pageSize, m => m.ToResponse());
     }
 
     public async Task<InventoryMovementResponse?> GetByIdAsync(int id)

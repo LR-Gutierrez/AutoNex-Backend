@@ -25,6 +25,7 @@ public class NotificationService : INotificationService
         var query = _context.Notifications
             .Include(n => n.Client)
             .Include(n => n.Vehicle)
+            .Where(n => !n.Client.IsDeleted)
             .AsQueryable();
 
         if (clientId.HasValue)

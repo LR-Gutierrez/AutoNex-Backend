@@ -37,7 +37,10 @@ public class ServiceOrderService : IServiceOrderService
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ServiceOrderStatus>(status, true, out var s))
             query = query.Where(o => o.Status == s);
 
-        query = query.OrderByDescending(o => o.CreatedAt);
+        query = query
+            .Where(o => !o.Vehicle.IsDeleted)
+            .Where(o => !o.Client.IsDeleted)
+            .OrderByDescending(o => o.CreatedAt);
 
         return await query.ToPagedResponseAsync(page, pageSize, MapToResponse);
     }

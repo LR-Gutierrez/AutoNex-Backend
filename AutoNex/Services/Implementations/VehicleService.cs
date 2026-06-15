@@ -21,6 +21,7 @@ public class VehicleService : IVehicleService
     {
         var query = _context.Vehicles
             .Include(v => v.Client)
+            .Where(v => !v.Client.IsDeleted)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))

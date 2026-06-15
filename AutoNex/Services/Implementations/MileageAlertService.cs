@@ -19,30 +19,40 @@ public class MileageAlertService : IMileageAlertService
 
     public async Task<PagedResponse<MileageAlertResponse>> GetAllAsync(bool? due, int? page, int? pageSize)
     {
-        var alerts = await _context.MileageAlerts
-            .Include(a => a.Vehicle)
-            .OrderByDescending(a => a.CreatedAt)
-            .ToListAsync();
-
-        var vehicleIds = alerts.Select(a => a.VehicleId).ToList();
-        var latestKms = await GetLatestKmBatchAsync(vehicleIds);
-
-        var filtered = due.HasValue && due.Value
-            ? alerts.Where(a => a.IsActive && IsDue(a, latestKms.GetValueOrDefault(a.VehicleId, 0))).ToList()
-            : alerts;
-
         var p = Math.Max(page ?? 1, 1);
         var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-        var totalCount = filtered.Count;
-        var items = filtered
+
+        var query = _context.MileageAlerts
+            .Include(a => a.Vehicle)
+            .Where(a => !a.Vehicle.IsDeleted)
+            .AsQueryable();
+
+        if (due.HasValue && due.Value)
+        {
+            query = query.Where(a => a.IsActive && (
+                a.NextAlertDate != null && DateTime.UtcNow >= a.NextAlertDate
+                ||
+                _context.ServiceOrders
+                    .Where(o => o.VehicleId == a.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
+                    .OrderByDescending(o => o.Date)
+                    .Select(o => o.CurrentKm)
+                    .FirstOrDefault() + (a.EstimatedWeeklyKm * 2) >= a.NextAlertKm
+            ));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(a => a.CreatedAt)
             .Skip((p - 1) * ps)
             .Take(ps)
-            .Select(a => a.ToResponse(latestKms.GetValueOrDefault(a.VehicleId, 0)))
-            .ToList();
+            .ToListAsync();
+
+        var vehicleIds = items.Select(a => a.VehicleId).ToList();
+        var latestKms = await GetLatestKmBatchAsync(vehicleIds);
 
         return new PagedResponse<MileageAlertResponse>
         {
-            Items = items,
+            Items = items.Select(a => a.ToResponse(latestKms.GetValueOrDefault(a.VehicleId, 0))).ToList(),
             Page = p,
             PageSize = ps,
             TotalCount = totalCount
@@ -217,11 +227,4 @@ public class MileageAlertService : IMileageAlertService
         return latest.ToDictionary(x => x.VehicleId, x => x.CurrentKm);
     }
 
-    private static bool IsDue(MileageAlert alert, int currentKm)
-    {
-        if (!alert.IsActive) return false;
-        bool kmDue = currentKm + (alert.EstimatedWeeklyKm * 2) >= alert.NextAlertKm;
-        bool timeDue = alert.NextAlertDate.HasValue && DateTime.UtcNow >= alert.NextAlertDate.Value;
-        return kmDue || timeDue;
-    }
 }
