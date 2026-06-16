@@ -172,6 +172,8 @@ public static class MappingExtensions
             alert.Id,
             alert.VehicleId,
             $"{alert.Vehicle.Brand} {alert.Vehicle.Model} ({alert.Vehicle.LicensePlate})",
+            alert.ServiceId,
+            alert.Service?.Name ?? "",
             currentKm,
             alert.EstimatedWeeklyKm,
             alert.NextAlertKm,

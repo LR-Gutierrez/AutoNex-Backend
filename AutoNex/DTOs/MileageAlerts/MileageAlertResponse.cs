@@ -4,6 +4,8 @@ public record MileageAlertResponse(
     int Id,
     int VehicleId,
     string VehicleInfo,
+    int ServiceId,
+    string ServiceName,
     int CurrentKm,
     int EstimatedWeeklyKm,
     int NextAlertKm,

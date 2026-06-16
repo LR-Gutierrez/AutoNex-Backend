@@ -12,10 +12,12 @@ namespace AutoNex.Services.Implementations;
 public class ServiceOrderService : IServiceOrderService
 {
     private readonly AppDbContext _context;
+    private readonly IMileageAlertService _mileageAlertService;
 
-    public ServiceOrderService(AppDbContext context)
+    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService)
     {
         _context = context;
+        _mileageAlertService = mileageAlertService;
     }
 
     public async Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
@@ -120,6 +122,18 @@ public class ServiceOrderService : IServiceOrderService
         _context.ServiceOrders.Add(order);
         await _context.SaveChangesAsync();
 
+        if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
+        {
+            try
+            {
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id);
+            }
+            catch
+            {
+                // Do not block order creation if alert setup fails
+            }
+        }
+
         return (await GetByIdAsync(order.Id))!;
     }
 
@@ -196,6 +210,19 @@ public class ServiceOrderService : IServiceOrderService
         order.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
+        {
+            try
+            {
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id);
+            }
+            catch
+            {
+                // Do not block order update if alert setup fails
+            }
+        }
+
         return (await GetByIdAsync(id))!;
     }
 

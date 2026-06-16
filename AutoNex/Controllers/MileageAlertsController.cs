@@ -73,13 +73,23 @@ public class MileageAlertsController : ControllerBase
     {
         try
         {
-            var alert = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId);
-            return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada/actualizada exitosamente"));
+            var alerts = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId);
+            return Ok(ApiResponse<List<MileageAlertResponse>>.Ok(alerts, "Alertas creadas/actualizadas exitosamente"));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<object>.Fail(ex.Message));
         }
+    }
+
+    [HttpPost("{id}/attend")]
+    public async Task<IActionResult> Attend(int id)
+    {
+        var alert = await _mileageAlertService.AttendAsync(id);
+        if (alert is null)
+            return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
+
+        return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta atendida exitosamente"));
     }
 
     [HttpPost("{id}/send")]

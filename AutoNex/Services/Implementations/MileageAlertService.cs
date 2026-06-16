@@ -24,6 +24,7 @@ public class MileageAlertService : IMileageAlertService
 
         var query = _context.MileageAlerts
             .Include(a => a.Vehicle)
+            .Include(a => a.Service)
             .Where(a => !a.Vehicle.IsDeleted)
             .AsQueryable();
 
@@ -33,7 +34,7 @@ public class MileageAlertService : IMileageAlertService
                 a.NextAlertDate != null && DateTime.UtcNow >= a.NextAlertDate
                 ||
                 _context.ServiceOrders
-                    .Where(o => o.VehicleId == a.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
+                    .Where(o => o.VehicleId == a.VehicleId && o.Status != Enums.ServiceOrderStatus.Cancelled)
                     .OrderByDescending(o => o.Date)
                     .Select(o => o.CurrentKm)
                     .FirstOrDefault() + (a.EstimatedWeeklyKm * 2) >= a.NextAlertKm
@@ -63,6 +64,7 @@ public class MileageAlertService : IMileageAlertService
     {
         var alert = await _context.MileageAlerts
             .Include(a => a.Vehicle)
+            .Include(a => a.Service)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (alert is null) return null;
@@ -75,16 +77,19 @@ public class MileageAlertService : IMileageAlertService
     {
         var vehicle = await _context.Vehicles.FindAsync(request.VehicleId)
             ?? throw new KeyNotFoundException("Vehículo no encontrado");
+        var service = await _context.Services.FindAsync(request.ServiceId)
+            ?? throw new KeyNotFoundException("Servicio no encontrado");
 
         var existing = await _context.MileageAlerts
-            .FirstOrDefaultAsync(a => a.VehicleId == request.VehicleId);
+            .FirstOrDefaultAsync(a => a.VehicleId == request.VehicleId && a.ServiceId == request.ServiceId);
 
         if (existing is not null)
-            throw new InvalidOperationException("El vehículo ya tiene una alerta configurada");
+            throw new InvalidOperationException("El vehículo ya tiene una alerta configurada para este servicio");
 
         var alert = new MileageAlert
         {
             VehicleId = request.VehicleId,
+            ServiceId = request.ServiceId,
             EstimatedWeeklyKm = request.EstimatedWeeklyKm,
             NextAlertKm = 5000,
             IsActive = true
@@ -119,7 +124,19 @@ public class MileageAlertService : IMileageAlertService
         return true;
     }
 
-    public async Task<MileageAlertResponse> CreateOrUpdateFromOrderAsync(int orderId)
+    public async Task<MileageAlertResponse?> AttendAsync(int id)
+    {
+        var alert = await _context.MileageAlerts.FindAsync(id);
+        if (alert is null) return null;
+
+        alert.IsActive = false;
+        alert.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return await GetByIdAsync(id);
+    }
+
+    public async Task<List<MileageAlertResponse>> CreateOrUpdateFromOrderAsync(int orderId)
     {
         var order = await _context.ServiceOrders
             .Include(o => o.Items)
@@ -127,82 +144,87 @@ public class MileageAlertService : IMileageAlertService
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new KeyNotFoundException("Orden no encontrada");
 
-        var alert = await _context.MileageAlerts
-            .FirstOrDefaultAsync(a => a.VehicleId == order.VehicleId && a.IsActive);
-
         var estimatedWeeklyKm = order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue
             ? order.EstimatedDailyKm.Value * order.DaysPerWeek.Value
             : (int?)null;
 
-        // Step 1: Calculate NextAlertKm and NextAlertDate from services
-        int maxKmInterval = 0;
-        DateTime? nextAlertDate = null;
-        foreach (var item in order.Items.Where(i => i.Service is not null))
-        {
-            if (item.Service!.MaxKmInterval > maxKmInterval)
-                maxKmInterval = item.Service!.MaxKmInterval.Value;
-
-            if (item.Service!.RecommendedMonths is not null)
-            {
-                var date = order.Date.AddMonths(item.Service!.RecommendedMonths.Value);
-                if (nextAlertDate is null || date < nextAlertDate)
-                    nextAlertDate = date;
-            }
-        }
-        bool hasKmInterval = maxKmInterval > 0;
-        if (!hasKmInterval) maxKmInterval = 5000;
-
         var currentKm = order.CurrentKm;
+        var serviceItems = order.Items.Where(i => i.Service is not null).ToList();
 
-        if (alert is null)
-        {
-            alert = new MileageAlert
-            {
-                VehicleId = order.VehicleId,
-                EstimatedWeeklyKm = estimatedWeeklyKm ?? 0,
-                NextAlertKm = hasKmInterval ? currentKm + maxKmInterval : currentKm + 5000,
-                NextAlertDate = nextAlertDate,
-                IsActive = true
-            };
-            _context.MileageAlerts.Add(alert);
-        }
-        else
-        {
-            // Refine EstimatedWeeklyKm with historical data
-            var previousOrder = await _context.ServiceOrders
-                .Where(o => o.VehicleId == order.VehicleId
-                    && o.Status == Enums.ServiceOrderStatus.Completed
-                    && o.Id != order.Id)
-                .OrderByDescending(o => o.Date)
-                .FirstOrDefaultAsync();
+        if (serviceItems.Count == 0)
+            return [];
 
-            if (previousOrder is not null && previousOrder.CurrentKm > 0 && previousOrder.CurrentKm != currentKm)
+        var results = new List<MileageAlertResponse>();
+
+        foreach (var item in serviceItems)
+        {
+            var service = item.Service!;
+            var maxKmInterval = service.MaxKmInterval ?? 5000;
+            var hasKmInterval = service.MaxKmInterval.HasValue && service.MaxKmInterval.Value > 0;
+
+            DateTime? nextAlertDate = null;
+            if (service.RecommendedMonths is not null)
+                nextAlertDate = order.Date.AddMonths(service.RecommendedMonths.Value);
+
+            var alert = await _context.MileageAlerts
+                .FirstOrDefaultAsync(a => a.VehicleId == order.VehicleId && a.ServiceId == service.Id && a.IsActive);
+
+            if (alert is null)
             {
-                var kmDiff = currentKm - previousOrder.CurrentKm;
-                var daysDiff = (DateTime.UtcNow - previousOrder.Date).TotalDays;
-                if (daysDiff > 0)
+                alert = new MileageAlert
                 {
-                    var calculatedWeekly = (int)(kmDiff / (daysDiff / 7));
-                    if (calculatedWeekly > 0)
-                        alert.EstimatedWeeklyKm = calculatedWeekly;
+                    VehicleId = order.VehicleId,
+                    ServiceId = service.Id,
+                    EstimatedWeeklyKm = estimatedWeeklyKm ?? 0,
+                    NextAlertKm = hasKmInterval ? currentKm + maxKmInterval : currentKm + 5000,
+                    NextAlertDate = nextAlertDate,
+                    IsActive = true
+                };
+                _context.MileageAlerts.Add(alert);
+            }
+            else
+            {
+                var previousOrder = await _context.ServiceOrders
+                    .Where(o => o.VehicleId == order.VehicleId
+                        && o.Status == Enums.ServiceOrderStatus.Completed
+                        && o.Id != order.Id)
+                    .OrderByDescending(o => o.Date)
+                    .FirstOrDefaultAsync();
+
+                if (previousOrder is not null && previousOrder.CurrentKm > 0 && previousOrder.CurrentKm != currentKm)
+                {
+                    var kmDiff = currentKm - previousOrder.CurrentKm;
+                    var daysDiff = (DateTime.UtcNow - previousOrder.Date).TotalDays;
+                    if (daysDiff > 0)
+                    {
+                        var calculatedWeekly = (int)(kmDiff / (daysDiff / 7));
+                        if (calculatedWeekly > 0)
+                            alert.EstimatedWeeklyKm = calculatedWeekly;
+                    }
                 }
+
+                alert.EstimatedWeeklyKm = estimatedWeeklyKm ?? alert.EstimatedWeeklyKm;
+                if (hasKmInterval || alert.NextAlertKm <= currentKm)
+                    alert.NextAlertKm = currentKm + maxKmInterval;
+                alert.NextAlertDate = nextAlertDate ?? alert.NextAlertDate;
+                alert.UpdatedAt = DateTime.UtcNow;
             }
 
-            alert.EstimatedWeeklyKm = estimatedWeeklyKm ?? alert.EstimatedWeeklyKm;
-            if (hasKmInterval) alert.NextAlertKm = currentKm + maxKmInterval;
-            alert.NextAlertDate = nextAlertDate ?? alert.NextAlertDate;
-            alert.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var response = await GetByIdAsync(alert.Id);
+            if (response is not null)
+                results.Add(response);
         }
 
-        await _context.SaveChangesAsync();
-
-        return (await GetByIdAsync(alert.Id))!;
+        return results;
     }
 
     private async Task<int> GetLatestKmAsync(int vehicleId)
     {
         var lastOrder = await _context.ServiceOrders
-            .Where(o => o.VehicleId == vehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
+            .Where(o => o.VehicleId == vehicleId)
+            .Where(o => o.Status != Enums.ServiceOrderStatus.Cancelled)
             .OrderByDescending(o => o.Date)
             .Select(o => (int?)o.CurrentKm)
             .FirstOrDefaultAsync();
@@ -215,7 +237,8 @@ public class MileageAlertService : IMileageAlertService
         if (vehicleIds.Count == 0) return [];
 
         var latest = await _context.ServiceOrders
-            .Where(o => vehicleIds.Contains(o.VehicleId) && o.Status == Enums.ServiceOrderStatus.Completed)
+            .Where(o => vehicleIds.Contains(o.VehicleId))
+            .Where(o => o.Status != Enums.ServiceOrderStatus.Cancelled)
             .GroupBy(o => o.VehicleId)
             .Select(g => new
             {
@@ -226,5 +249,4 @@ public class MileageAlertService : IMileageAlertService
 
         return latest.ToDictionary(x => x.VehicleId, x => x.CurrentKm);
     }
-
 }

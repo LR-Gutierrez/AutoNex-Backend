@@ -10,5 +10,6 @@ public interface IMileageAlertService
     Task<MileageAlertResponse> CreateAsync(CreateMileageAlertRequest request);
     Task<MileageAlertResponse?> UpdateAsync(int id, UpdateMileageAlertRequest request);
     Task<bool> DeleteAsync(int id);
-    Task<MileageAlertResponse> CreateOrUpdateFromOrderAsync(int orderId);
+    Task<MileageAlertResponse?> AttendAsync(int id);
+    Task<List<MileageAlertResponse>> CreateOrUpdateFromOrderAsync(int orderId);
 }

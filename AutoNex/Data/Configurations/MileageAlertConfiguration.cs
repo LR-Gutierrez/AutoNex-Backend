@@ -15,6 +15,9 @@ public class MileageAlertConfiguration : IEntityTypeConfiguration<MileageAlert>
         builder.Property(a => a.VehicleId)
             .HasColumnName("vehicle_id");
 
+        builder.Property(a => a.ServiceId)
+            .HasColumnName("service_id");
+
         builder.Property(a => a.EstimatedWeeklyKm)
             .HasColumnName("estimated_weekly_km");
 
@@ -43,6 +46,13 @@ public class MileageAlertConfiguration : IEntityTypeConfiguration<MileageAlert>
             .WithMany()
             .HasForeignKey(a => a.VehicleId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(a => a.Service)
+            .WithMany()
+            .HasForeignKey(a => a.ServiceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(a => new { a.VehicleId, a.ServiceId }).IsUnique();
 
         builder.HasQueryFilter(a => !a.IsDeleted);
     }
