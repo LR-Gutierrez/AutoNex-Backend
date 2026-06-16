@@ -19,7 +19,7 @@ public class FinancialRecordService : IFinancialRecordService
     }
 
     private static DateTime? ToUtc(DateTime? dt) =>
-        dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : null;
+        dt.HasValue ? (dt.Value.Kind == DateTimeKind.Utc ? dt.Value : dt.Value.ToUniversalTime()) : null;
 
     public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize)
     {
@@ -66,7 +66,7 @@ public class FinancialRecordService : IFinancialRecordService
             Category = request.Category,
             Amount = request.Amount,
             Description = request.Description,
-            Date = request.Date,
+            Date = ToUtc(request.Date) ?? request.Date,
             UserId = request.UserId
         };
 
@@ -78,14 +78,16 @@ public class FinancialRecordService : IFinancialRecordService
 
     public async Task<FinancialRecordResponse?> UpdateAsync(int id, UpdateFinancialRecordRequest request)
     {
-        var record = await _context.FinancialRecords.FindAsync(id);
+        var record = await _context.FinancialRecords
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (record is null) return null;
 
         record.Type = request.Type;
         record.Category = request.Category;
         record.Amount = request.Amount;
         record.Description = request.Description;
-        record.Date = request.Date;
+        record.Date = ToUtc(request.Date) ?? request.Date;
         record.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -115,15 +117,17 @@ public class FinancialRecordService : IFinancialRecordService
         if (utcTo.HasValue)
             query = query.Where(r => r.Date <= utcTo.Value);
 
-        var records = await query.ToListAsync();
+        var incomeSum = await query.Where(r => r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount) ?? 0;
+        var expenseSum = await query.Where(r => r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount) ?? 0;
+        var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync();
+        var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync();
 
         return new FinancialSummaryResponse(
-            records.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount),
-            records.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount),
-            records.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount) -
-                records.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount),
-            records.Count(r => r.Type == FinancialRecordType.Income),
-            records.Count(r => r.Type == FinancialRecordType.Expense)
+            incomeSum,
+            expenseSum,
+            incomeSum - expenseSum,
+            incomeCount,
+            expenseCount
         );
     }
 
@@ -141,14 +145,19 @@ public class FinancialRecordService : IFinancialRecordService
 
         var grouped = await query
             .GroupBy(r => r.Category)
-            .Select(g => new CategorySummaryResponse(
-                g.Key.ToString(),
-                g.Sum(r => r.Amount),
-                g.Count()
-            ))
+            .Select(g => new
+            {
+                Category = g.Key,
+                TotalAmount = g.Sum(r => r.Amount),
+                Count = g.Count()
+            })
             .OrderByDescending(g => g.TotalAmount)
             .ToListAsync();
 
-        return grouped;
+        return grouped.Select(g => new CategorySummaryResponse(
+            g.Category.ToString(),
+            g.TotalAmount,
+            g.Count
+        )).ToList();
     }
 }

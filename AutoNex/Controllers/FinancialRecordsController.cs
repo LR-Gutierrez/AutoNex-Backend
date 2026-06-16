@@ -37,6 +37,7 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateFinancialRecordRequest request)
     {
         var record = await _financialRecordService.CreateAsync(request);
@@ -45,6 +46,7 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateFinancialRecordRequest request)
     {
         var record = await _financialRecordService.UpdateAsync(id, request);
@@ -55,6 +57,7 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _financialRecordService.DeleteAsync(id);
