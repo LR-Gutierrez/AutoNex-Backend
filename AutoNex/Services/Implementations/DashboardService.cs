@@ -41,7 +41,8 @@ public class DashboardService : IDashboardService
             Open: orders.Count(o => o.Status == ServiceOrderStatus.Open),
             InProgress: orders.Count(o => o.Status == ServiceOrderStatus.InProgress),
             Completed: orders.Count(o => o.Status == ServiceOrderStatus.Completed),
-            TotalAmount: orders.Where(o => o.Status == ServiceOrderStatus.Completed).Sum(o => o.TotalAmount)
+            Paid: orders.Count(o => o.Status == ServiceOrderStatus.Paid),
+            TotalAmount: orders.Where(o => o.Status == ServiceOrderStatus.Completed || o.Status == ServiceOrderStatus.Paid).Sum(o => o.TotalAmount)
         );
     }
 
@@ -130,7 +131,8 @@ public class DashboardService : IDashboardService
                 periodOrders.Count(o => o.Status == ServiceOrderStatus.Open),
                 periodOrders.Count(o => o.Status == ServiceOrderStatus.InProgress),
                 periodOrders.Count(o => o.Status == ServiceOrderStatus.Completed),
-                periodOrders.Where(o => o.Status == ServiceOrderStatus.Completed).Sum(o => o.TotalAmount)
+                periodOrders.Count(o => o.Status == ServiceOrderStatus.Paid),
+                periodOrders.Where(o => o.Status == ServiceOrderStatus.Completed || o.Status == ServiceOrderStatus.Paid).Sum(o => o.TotalAmount)
             );
 
             var periodRecords = allFinancialRecords.Where(r => r.Date >= start && r.Date < end).ToList();

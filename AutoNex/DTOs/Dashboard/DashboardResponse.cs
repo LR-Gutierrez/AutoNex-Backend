@@ -14,6 +14,7 @@ public record OrdersSummary(
     int Open,
     int InProgress,
     int Completed,
+    int Paid,
     decimal TotalAmount
 );
 

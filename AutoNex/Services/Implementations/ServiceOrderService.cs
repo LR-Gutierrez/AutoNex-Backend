@@ -237,8 +237,8 @@ public class ServiceOrderService : IServiceOrderService
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
         if (order is null) return null;
 
-        if (order.Status == ServiceOrderStatus.Completed || order.Status == ServiceOrderStatus.Cancelled)
-            throw new InvalidOperationException("No se puede cambiar el estado de una orden completada o cancelada");
+        if (order.Status is ServiceOrderStatus.Completed or ServiceOrderStatus.Paid or ServiceOrderStatus.Cancelled)
+            throw new InvalidOperationException("No se puede cambiar el estado de una orden completada, pagada o cancelada");
 
         if (request.Status == ServiceOrderStatus.Cancelled)
         {
@@ -258,6 +258,36 @@ public class ServiceOrderService : IServiceOrderService
         order.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
+    }
+
+    public async Task<ServiceOrderResponse> PayAsync(int id, int userId, CancellationToken cancellationToken = default)
+    {
+        var order = await _context.ServiceOrders
+            .Include(o => o.Vehicle)
+            .Include(o => o.Client)
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken)
+            ?? throw new KeyNotFoundException("Orden no encontrada");
+
+        if (order.Status != ServiceOrderStatus.Completed)
+            throw new InvalidOperationException("Solo órdenes completadas pueden marcarse como pagadas");
+
+        var record = new FinancialRecord
+        {
+            Type = FinancialRecordType.Income,
+            Category = FinancialCategory.Services,
+            Amount = order.TotalAmount,
+            Description = $"Pago orden #{order.Id} - {order.Vehicle.Brand} {order.Vehicle.Model} ({order.Vehicle.LicensePlate})",
+            Date = DateTime.UtcNow,
+            UserId = userId
+        };
+
+        order.Status = ServiceOrderStatus.Paid;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        _context.FinancialRecords.Add(record);
+        await _context.SaveChangesAsync(cancellationToken);
+
         return (await GetByIdAsync(id, cancellationToken))!;
     }
 
