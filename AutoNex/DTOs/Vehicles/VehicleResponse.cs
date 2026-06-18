@@ -9,5 +9,6 @@ public record VehicleResponse(
     int Year,
     string LicensePlate,
     string? VIN,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    List<ServiceOrderBriefResponse> ServiceOrders
 );

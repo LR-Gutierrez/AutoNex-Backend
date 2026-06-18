@@ -36,7 +36,7 @@ public static class MappingExtensions
             vehicle.LicensePlate
         );
 
-    public static VehicleResponse ToResponse(this Vehicle vehicle)
+    public static VehicleResponse ToResponse(this Vehicle vehicle, List<ServiceOrderBriefResponse>? orders = null)
         => new(
             vehicle.Id,
             vehicle.ClientId,
@@ -46,7 +46,8 @@ public static class MappingExtensions
             vehicle.Year,
             vehicle.LicensePlate,
             vehicle.VIN,
-            vehicle.CreatedAt
+            vehicle.CreatedAt,
+            orders ?? []
         );
 
     public static SupplierResponse ToResponse(this Supplier supplier)

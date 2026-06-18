@@ -40,7 +40,21 @@ public class VehicleService : IVehicleService
             .Include(v => v.Client)
             .FirstOrDefaultAsync(v => v.Id == id);
 
-        return vehicle?.ToResponse();
+        if (vehicle is null) return null;
+
+        var orders = await _context.ServiceOrders
+            .Where(o => o.VehicleId == id && !o.IsDeleted)
+            .OrderByDescending(o => o.Date)
+            .Select(o => new ServiceOrderBriefResponse(
+                o.Id,
+                o.Date,
+                o.Status.ToString(),
+                o.TotalAmount,
+                o.CurrentKm
+            ))
+            .ToListAsync();
+
+        return vehicle.ToResponse(orders);
     }
 
     public async Task<VehicleResponse> CreateAsync(CreateVehicleRequest request)
