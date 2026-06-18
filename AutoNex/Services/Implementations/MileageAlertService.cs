@@ -42,7 +42,7 @@ public class MileageAlertService : IMileageAlertService
             ));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
         var items = await query
             .OrderByDescending(a => a.CreatedAt)
             .Skip((p - 1) * ps)
@@ -50,7 +50,7 @@ public class MileageAlertService : IMileageAlertService
             .ToListAsync(cancellationToken);
 
         var vehicleIds = items.Select(a => a.VehicleId).ToList();
-        var latestKms = await GetLatestKmBatchAsync(vehicleIds, cancellationToken);
+        var latestKms = await GetLatestKmBatchAsync(vehicleIds, cancellationToken).ConfigureAwait(false);
 
         return new PagedResponse<MileageAlertResponse>
         {
@@ -71,15 +71,15 @@ public class MileageAlertService : IMileageAlertService
 
         if (alert is null) return null;
 
-        var currentKm = await GetLatestKmAsync(alert.VehicleId, cancellationToken);
+        var currentKm = await GetLatestKmAsync(alert.VehicleId, cancellationToken).ConfigureAwait(false);
         return alert.ToResponse(currentKm);
     }
 
     public async Task<MileageAlertResponse> CreateAsync(CreateMileageAlertRequest request, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken)
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Vehículo no encontrado");
-        var service = await _context.Services.FindAsync(new object[] { request.ServiceId }, cancellationToken)
+        var service = await _context.Services.FindAsync(new object[] { request.ServiceId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Servicio no encontrado");
 
         var existing = await _context.MileageAlerts
@@ -98,44 +98,44 @@ public class MileageAlertService : IMileageAlertService
         };
 
         _context.MileageAlerts.Add(alert);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return (await GetByIdAsync(alert.Id, cancellationToken))!;
+        return (await GetByIdAsync(alert.Id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<MileageAlertResponse?> UpdateAsync(int id, UpdateMileageAlertRequest request, CancellationToken cancellationToken = default)
     {
-        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken);
+        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (alert is null) return null;
 
         alert.EstimatedWeeklyKm = request.EstimatedWeeklyKm;
         alert.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
-        return (await GetByIdAsync(id, cancellationToken))!;
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken);
+        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (alert is null) return false;
 
         alert.IsDeleted = true;
         alert.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 
     public async Task<MileageAlertResponse?> AttendAsync(int id, CancellationToken cancellationToken = default)
     {
-        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken);
+        var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (alert is null) return null;
 
         alert.IsActive = false;
         alert.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return await GetByIdAsync(id, cancellationToken);
+        return await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<List<MileageAlertResponse>> CreateOrUpdateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
@@ -212,9 +212,9 @@ public class MileageAlertService : IMileageAlertService
                 alert.UpdatedAt = DateTime.UtcNow;
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            var response = await GetByIdAsync(alert.Id, cancellationToken);
+            var response = await GetByIdAsync(alert.Id, cancellationToken).ConfigureAwait(false);
             if (response is not null)
                 results.Add(response);
         }

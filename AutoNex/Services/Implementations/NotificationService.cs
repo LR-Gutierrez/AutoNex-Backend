@@ -45,7 +45,7 @@ public class NotificationService : INotificationService
 
         query = query.OrderByDescending(n => n.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<NotificationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -61,7 +61,7 @@ public class NotificationService : INotificationService
 
     public async Task<NotificationResponse> SendAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken)
+        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
         var notification = new Notification
@@ -75,11 +75,11 @@ public class NotificationService : INotificationService
         };
 
         _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
         {
-            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken);
+            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
             notification.Status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
             notification.SentAt = sent ? DateTime.UtcNow : null;
         }
@@ -89,11 +89,11 @@ public class NotificationService : INotificationService
             notification.SentAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        var response = (await GetByIdAsync(notification.Id, cancellationToken))!;
+        var response = (await GetByIdAsync(notification.Id, cancellationToken).ConfigureAwait(false))!;
 
-        await _hubContext.Clients.Group("all").SendAsync("newNotification", response, cancellationToken);
+        await _hubContext.Clients.Group("all").SendAsync("newNotification", response, cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -131,6 +131,6 @@ public class NotificationService : INotificationService
             message
         );
 
-        return await SendAsync(request, cancellationToken);
+        return await SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }

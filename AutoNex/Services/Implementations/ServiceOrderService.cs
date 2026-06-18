@@ -47,7 +47,7 @@ public class ServiceOrderService : IServiceOrderService
             .Where(o => !o.Client.IsDeleted)
             .OrderByDescending(o => o.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, MapToResponse, cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, MapToResponse, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ServiceOrderResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -68,9 +68,9 @@ public class ServiceOrderService : IServiceOrderService
 
     public async Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken)
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Vehículo no encontrado");
-        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken)
+        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
         var order = new ServiceOrder
@@ -93,13 +93,13 @@ public class ServiceOrderService : IServiceOrderService
                 if (!itemReq.ServiceId.HasValue)
                     throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
 
-                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken)
+                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken).ConfigureAwait(false)
                     ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
             }
 
             if (itemReq.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken)
+                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken).ConfigureAwait(false)
                     ?? throw new KeyNotFoundException($"Consumible {itemReq.ConsumableId} no encontrado");
 
                 if (consumable.StockQuantity < itemReq.Quantity)
@@ -127,22 +127,22 @@ public class ServiceOrderService : IServiceOrderService
         try
         {
             _context.ServiceOrders.Add(order);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
             {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
             }
 
-            await transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             throw;
         }
 
-        return (await GetByIdAsync(order.Id, cancellationToken))!;
+        return (await GetByIdAsync(order.Id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request, CancellationToken cancellationToken = default)
@@ -161,7 +161,7 @@ public class ServiceOrderService : IServiceOrderService
         {
             if (oldItem.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(new object[] { oldItem.ConsumableId.Value }, cancellationToken);
+                var consumable = await _context.Consumables.FindAsync(new object[] { oldItem.ConsumableId.Value }, cancellationToken).ConfigureAwait(false);
                 if (consumable is not null)
                 {
                     consumable.StockQuantity += oldItem.Quantity;
@@ -186,13 +186,13 @@ public class ServiceOrderService : IServiceOrderService
                 if (!itemReq.ServiceId.HasValue)
                     throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
 
-                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken)
+                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken).ConfigureAwait(false)
                     ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
             }
 
             if (itemReq.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken)
+                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken).ConfigureAwait(false)
                     ?? throw new KeyNotFoundException($"Consumible {itemReq.ConsumableId} no encontrado");
 
                 if (consumable.StockQuantity < itemReq.Quantity)
@@ -220,22 +220,22 @@ public class ServiceOrderService : IServiceOrderService
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
             {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
             }
 
-            await transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             throw;
         }
 
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default)
@@ -253,7 +253,7 @@ public class ServiceOrderService : IServiceOrderService
             foreach (var item in order.Items.Where(i => i.ConsumableId.HasValue))
             {
                 var consumableId = item.ConsumableId.GetValueOrDefault();
-                var consumable = await _context.Consumables.FindAsync(new object[] { consumableId }, cancellationToken);
+                var consumable = await _context.Consumables.FindAsync(new object[] { consumableId }, cancellationToken).ConfigureAwait(false);
                 if (consumable is not null)
                 {
                     consumable.StockQuantity += item.Quantity;
@@ -268,16 +268,16 @@ public class ServiceOrderService : IServiceOrderService
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             throw;
         }
 
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<ServiceOrderResponse> PayAsync(int id, int userId, PayOrderRequest request, CancellationToken cancellationToken = default)
@@ -311,16 +311,16 @@ public class ServiceOrderService : IServiceOrderService
         try
         {
             _context.FinancialRecords.Add(record);
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             throw;
         }
 
-        return (await GetByIdAsync(id, cancellationToken))!;
+        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
     }
 
     private static ServiceOrderResponse MapToResponse(ServiceOrder order)

@@ -31,7 +31,7 @@ public class ClientService : IClientService
 
         query = query.OrderByDescending(c => c.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ClientResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -55,14 +55,14 @@ public class ClientService : IClientService
         };
 
         _context.Clients.Add(client);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return client.ToResponse();
     }
 
     public async Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken);
+        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (client is null) return null;
 
         client.FullName = request.FullName;
@@ -71,18 +71,18 @@ public class ClientService : IClientService
         client.Address = request.Address;
         client.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return client.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken);
+        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (client is null) return false;
 
         client.IsDeleted = true;
         client.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

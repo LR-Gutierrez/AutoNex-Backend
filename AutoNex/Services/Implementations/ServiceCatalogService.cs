@@ -23,12 +23,12 @@ public class ServiceCatalogService : IServiceCatalogService
             .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
 
-        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ServiceResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         return service?.ToResponse();
     }
 
@@ -45,14 +45,14 @@ public class ServiceCatalogService : IServiceCatalogService
         };
 
         _context.Services.Add(service);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return service.ToResponse();
     }
 
     public async Task<ServiceResponse?> UpdateAsync(int id, UpdateServiceRequest request, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (service is null) return null;
 
         service.Name = request.Name;
@@ -63,18 +63,18 @@ public class ServiceCatalogService : IServiceCatalogService
         service.RecommendedMonths = request.RecommendedMonths;
         service.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return service.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (service is null) return false;
 
         service.IsDeleted = true;
         service.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

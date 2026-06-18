@@ -32,7 +32,7 @@ public class InventoryMovementService : IInventoryMovementService
 
         return await query
             .OrderByDescending(m => m.CreatedAt)
-            .ToPagedResponseAsync(page, pageSize, m => m.ToResponse(), cancellationToken);
+            .ToPagedResponseAsync(page, pageSize, m => m.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<InventoryMovementResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -41,7 +41,7 @@ public class InventoryMovementService : IInventoryMovementService
             .AsNoTracking()
             .Include(m => m.Consumable)
             .Include(m => m.Tool)
-            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken).ConfigureAwait(false);
 
         return movement?.ToResponse();
     }

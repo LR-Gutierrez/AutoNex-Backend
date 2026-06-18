@@ -21,7 +21,7 @@ public class DashboardNotifier : IDashboardNotifier
     {
         try
         {
-            await _hubContext.Clients.Group("dashboard").SendAsync("dashboardUpdated", cancellationToken);
+            await _hubContext.Clients.Group("dashboard").SendAsync("dashboardUpdated", cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
