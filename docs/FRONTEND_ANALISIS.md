@@ -951,10 +951,8 @@ export interface ServiceOrderResponse {
 
 export interface ServiceOrderItemResponse {
   id: number;
-  serviceId: number;
-  serviceName: string;
-  serviceVariantId?: number;
-  serviceVariantName?: string;
+  serviceId?: number;
+  serviceName?: string;
   consumableId?: number;
   consumableName?: string;
   quantity: number;
@@ -970,8 +968,7 @@ export interface CreateServiceOrderRequest {
 }
 
 export interface CreateServiceOrderItemRequest {
-  serviceId: number;
-  serviceVariantId?: number;
+  serviceId?: number;
   consumableId?: number;
   quantity: number;
   unitPrice: number;
@@ -984,7 +981,7 @@ export interface UpdateServiceOrderStatusRequest {
 
 ### 12.7 Modelos Restantes
 
-Los modelos para `Supplier`, `Consumable`, `Tool`, `Service`, `ServiceVariant`, `MileageAlert`, `FinancialRecord`, `FinancialSummary`, `CategorySummary`, `Notification` e `InventoryMovement` siguen la misma estructura que sus correspondientes DTOs C# del backend. Ver `docs/API.md` para la referencia completa de campos.
+Los modelos para `Supplier`, `Consumable`, `Tool`, `Service`, `MileageAlert`, `FinancialRecord`, `FinancialSummary`, `CategorySummary`, `Notification` e `InventoryMovement` siguen la misma estructura que sus correspondientes DTOs C# del backend. Ver `docs/API.md` para la referencia completa de campos.
 
 ---
 
@@ -1037,11 +1034,9 @@ Los modelos para `Supplier`, `Consumable`, `Tool`, `Service`, `ServiceVariant`, 
 
 | Actividad | Entregable |
 |---|---|
-| `ServiceService` + Signals | CRUD servicios + variantes |
+| `ServiceService` + Signals | CRUD servicios |
 | ServiceListComponent | Tabla con búsqueda |
-| ServiceFormComponent | Formulario con precio default |
-| ServiceDetailComponent | Vista con variantes anidadas |
-| ServiceVariant management | CRUD inline en detalle del servicio |
+| ServiceFormComponent | Formulario con precio default, intervalos de km y meses |
 
 ### Etapa 5 — Órdenes de Servicio (Sprint 3, Semana 4)
 
@@ -1049,7 +1044,7 @@ Los modelos para `Supplier`, `Consumable`, `Tool`, `Service`, `ServiceVariant`, 
 |---|---|
 | `ServiceOrderService` + Signals | CRUD completo |
 | ServiceOrderListComponent | Tabla con filtros por fecha/cliente/estado |
-| ServiceOrderFormComponent | Formulario con grid de items dinámico, selectores de servicio/variante/consumible, cálculo automático de total |
+| ServiceOrderFormComponent | Formulario con grid de items dinámico, selectores de servicio/consumible, cálculo automático de total |
 | ServiceOrderDetailComponent | Vista detalle con items, acciones de cambio de estado |
 | Status management | PATCH de estado con confirmación |
 

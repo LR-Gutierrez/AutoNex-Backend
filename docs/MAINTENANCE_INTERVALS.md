@@ -375,14 +375,14 @@ Las siguientes condiciones reducen todos los intervalos en aproximadamente **40 
 
 ## Mapeo al Modelo de Datos
 
-Cada ítem de esta lista se modela como `Service` → `ServiceVariant` en el sistema:
+Cada ítem de esta lista se modela como un `Service` con intervalos directamente en el registro:
 
 ```
 Service (ej. "Cambio de Aceite")
-├── ServiceVariant (ej. "Aceite Mineral"     — MinKm: 5000,  MaxKm: 5000,  Meses: 6)
-├── ServiceVariant (ej. "Aceite Semi-sintético" — MinKm: 7500,  MaxKm: 10000, Meses: 12)
-├── ServiceVariant (ej. "Aceite Sintético"    — MinKm: 10000, MaxKm: 15000, Meses: 24)
-└── ServiceVariant (ej. "Aceite LongLife"     — MinKm: 25000, MaxKm: 30000, Meses: 24)
+├── Entrada: "Aceite Mineral"         — MinKm: 5000,  MaxKm: 5000,  Meses: 6
+├── Entrada: "Aceite Semi-sintético"  — MinKm: 7500,  MaxKm: 10000, Meses: 12
+├── Entrada: "Aceite Sintético"       — MinKm: 10000, MaxKm: 15000, Meses: 24
+└── Entrada: "Aceite LongLife"        — MinKm: 25000, MaxKm: 30000, Meses: 24
 ```
 
-La alerta de kilometraje usa `MaxKmInterval` y `RecommendedMonths` de la variante seleccionada en la orden de servicio para calcular `NextAlertKm` y determinar si es fecha de recordatorio ("lo que ocurra primero").
+La alerta de kilometraje usa `MaxKmInterval` y `RecommendedMonths` del servicio seleccionado en la orden para calcular `NextAlertKm` y determinar si es fecha de recordatorio ("lo que ocurra primero").

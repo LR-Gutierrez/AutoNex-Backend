@@ -59,10 +59,9 @@ Client (1) ──< (N) Vehicle
 Vehicle (1) ──< (N) ServiceOrder
 Vehicle (1) ── (1) MileageAlert
 ServiceOrder (1) ──< (N) ServiceOrderItem
-ServiceOrderItem (N) >── (1) ServiceVariant (nullable)
+ServiceOrderItem (N) >── (1) Service (nullable)
 ServiceOrderItem (N) >── (1) Consumable (nullable)
 Service (1) ──< (N) ServiceOrderItem
-Service (1) ──< (N) ServiceVariant
 Supplier (1) ──< (N) Consumable
 User (1) ──< (N) FinancialRecord
 ```
@@ -77,11 +76,10 @@ User (1) ──< (N) FinancialRecord
 | **Suppliers** | Id, Name, ContactPerson, Phone, Email, IsDeleted, CreatedAt, UpdatedAt |
 | **Consumables** | Id, Name, Category (enum: Oil/SparkPlug/Coolant/Grease/BrakeFluid/Other), StockQuantity, MinStock, UnitPrice, SupplierId (FK), IsDeleted, CreatedAt, UpdatedAt |
 | **Tools** | Id, Name, Category (enum: Jack/Wrench/Ratchet/Screwdriver/Hammer/Other), Quantity, Status (enum: Available/Damaged/Lost), PurchaseDate, IsDeleted, CreatedAt, UpdatedAt |
-| **Services** | Id, Name, Description, DefaultPrice, RecommendedKmInterval (nullable), IsDeleted, CreatedAt, UpdatedAt |
+| **Services** | Id, Name, Description, DefaultPrice, MinKmInterval (nullable), MaxKmInterval (nullable), RecommendedMonths (nullable), IsDeleted, CreatedAt, UpdatedAt |
 | **ServiceOrders** | Id, VehicleId (FK), ClientId (FK), UserId (FK), CurrentKm, Date, Status (enum: Open/InProgress/Completed/Cancelled), TotalAmount, Notes, IsDeleted, CreatedAt, UpdatedAt |
-| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK), ServiceVariantId (FK nullable), ConsumableId (FK nullable), Quantity, UnitPrice, IsDeleted, CreatedAt |
-| **ServiceVariants** | Id, ServiceId (FK), Name, Description, MinKmInterval, MaxKmInterval, RecommendedMonths (nullable), IsActive, CreatedAt, UpdatedAt |
-| **MileageAlerts** | Id, VehicleId (FK), LastRecordedKm, EstimatedWeeklyKm, NextAlertKm, LastAlertDate, IsActive, IsDeleted, CreatedAt, UpdatedAt |
+| **ServiceOrderItems** | Id, ServiceOrderId (FK), ServiceId (FK nullable), ConsumableId (FK nullable), Quantity, UnitPrice, IsDeleted, CreatedAt |
+| **MileageAlerts** | Id, VehicleId (FK), ServiceId (FK), EstimatedWeeklyKm, NextAlertKm, NextAlertDate (nullable), LastAlertDate, IsActive, IsDeleted, CreatedAt, UpdatedAt |
 | **FinancialRecords** | Id, Type (enum: Income/Expense), Category (enum: Services/Suppliers/Rent/Payroll/Utilities/Other), Amount, Description, Date, UserId (FK), IsDeleted, CreatedAt, UpdatedAt |
 | **Notifications** | Id, ClientId (FK), VehicleId (FK nullable), Type (enum: WhatsApp/SMS/Email), Recipient, Message, SentAt, Status (enum: Pending/Sent/Failed), IsDeleted, CreatedAt |
 | **InventoryMovements** | Id, ConsumableId (FK nullable), ToolId (FK nullable), MovementType (enum: In/Out), Quantity, Reference, ReferenceId, Notes, CreatedAt |
@@ -165,14 +163,10 @@ DELETE /api/tools/{id}           → Soft delete
 
 ```
 GET    /api/services                      → Listar servicios
+GET    /api/services/{id}                 → Obtener servicio por ID
 POST   /api/services                      → Crear servicio
 PUT    /api/services/{id}                 → Actualizar precio/nombre
 DELETE /api/services/{id}                 → Soft delete
-GET    /api/services/{id}/variants        → Listar variantes de un servicio
-POST   /api/services/{id}/variants        → Crear variante
-GET    /api/services/variants/{id}        → Obtener variante por ID
-PUT    /api/services/variants/{id}        → Actualizar variante
-DELETE /api/services/variants/{id}        → Desactivar variante (IsActive = false)
 ```
 
 ### 5.9 Órdenes de Servicio
@@ -356,7 +350,6 @@ AutoNex/
 │   ├── Consumable.cs
 │   ├── Tool.cs
 │   ├── Service.cs
-│   ├── ServiceVariant.cs
 │   ├── ServiceOrder.cs
 │   ├── ServiceOrderItem.cs
 │   ├── MileageAlert.cs
@@ -463,7 +456,7 @@ AutoNex/
 
 ## 14. Referencia de Intervalos de Mantenimiento
 
-Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa de referencia con intervalos de mantenimiento por tipo de servicio, variante de material, kilometraje y tiempo, incluyendo fuentes de fabricantes de componentes (NGK, Monroe) y manuales de vehículos (Kia, Mazda, Ford).
+Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa de referencia con intervalos de mantenimiento por tipo de servicio, kilometraje y tiempo, incluyendo fuentes de fabricantes de componentes (NGK, Monroe) y manuales de vehículos (Kia, Mazda, Ford).
 
 ## 15. Próximos Pasos
 
@@ -471,7 +464,7 @@ Ver [MAINTENANCE_INTERVALS.md](MAINTENANCE_INTERVALS.md) para una tabla completa
 
 - ✅ **Etapa 1 — Fundación**: DB, Auth, CRUD Clientes/Vehículos/Proveedores/Usuarios
 - ✅ **Etapa 2 — Inventarios**: Consumibles, Herramientas (CRUD, filtros, stock mínimo)
-- ✅ **Etapa 3 — Órdenes de Servicio**: Catálogo de servicios, ServiceVariants, órdenes con items, descuento de stock, cambio de estados
+- ✅ **Etapa 3 — Órdenes de Servicio**: Catálogo de servicios (con MinKmInterval, MaxKmInterval, RecommendedMonths), órdenes con items, descuento de stock, cambio de estados
 - ✅ **Etapa 4 — Alertas de Kilometraje**: Modelo MileageAlert, cálculo híbrido (km + tiempo), endpoints REST, integración con órdenes completadas
 
 ### Pendiente

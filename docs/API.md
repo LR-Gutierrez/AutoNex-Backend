@@ -344,11 +344,13 @@ Requiere rol **Admin**. Crea un servicio.
   "name": "Cambio de Aceite",
   "description": "Cambio de aceite y filtro",
   "defaultPrice": 45.00,
-  "recommendedKmInterval": 10000
+  "minKmInterval": 5000,
+  "maxKmInterval": 10000,
+  "recommendedMonths": 6
 }
 ```
 
-`recommendedKmInterval` y `description` son opcionales.
+`minKmInterval`, `maxKmInterval` y `recommendedMonths` son opcionales.
 
 ### `PUT /api/services/{id}`
 
@@ -357,40 +359,6 @@ Requiere rol **Admin**. Actualiza un servicio. Mismos campos que POST.
 ### `DELETE /api/services/{id}`
 
 Requiere rol **Admin**. Soft delete del servicio.
-
-### `GET /api/services/{serviceId}/variants`
-
-Lista las variantes de un servicio.
-
-### `GET /api/services/variants/{id}`
-
-Obtiene una variante por ID.
-
-### `POST /api/services/{serviceId}/variants`
-
-Requiere rol **Admin**. Crea una variante.
-
-**Request:**
-
-```json
-{
-  "name": "Aceite Sintético 5W-30",
-  "description": "Para motores modernos",
-  "minKmInterval": 10000,
-  "maxKmInterval": 15000,
-  "recommendedMonths": 12
-}
-```
-
-`description` y `recommendedMonths` son opcionales.
-
-### `PUT /api/services/variants/{id}`
-
-Requiere rol **Admin**. Actualiza una variante. Mismos campos que POST.
-
-### `DELETE /api/services/variants/{id}`
-
-Requiere rol **Admin**. Desactiva una variante (soft delete).
 
 ---
 
@@ -423,7 +391,6 @@ Al marcar como `Completed`, actualiza la alerta de kilometraje del vehículo.
   "items": [
     {
       "serviceId": 1,
-      "serviceVariantId": 1,
       "consumableId": 1,
       "quantity": 1,
       "unitPrice": 35.00
@@ -432,7 +399,7 @@ Al marcar como `Completed`, actualiza la alerta de kilometraje del vehículo.
 }
 ```
 
-`serviceVariantId` y `consumableId` son opcionales.
+`serviceId` y `consumableId` son opcionales (al menos uno debe ir).
 
 ### `PUT /api/service-orders/{id}`
 
@@ -578,14 +545,15 @@ Crea un registro financiero (ingreso o egreso).
   "category": "Services",
   "amount": 450.00,
   "description": "Mano de obra cambio de aceite",
-  "date": "2026-06-11T00:00:00Z",
-  "userId": 1
+  "date": "2026-06-11T00:00:00Z"
 }
 ```
 
+El `userId` se extrae automáticamente del JWT del usuario autenticado.
+
 ### `PUT /api/financial-records/{id}`
 
-Actualiza un registro financiero. Mismos campos que POST (excepto `userId`).
+Actualiza un registro financiero. Mismos campos que POST (no incluye `userId`, se obtiene del JWT).
 
 ### `DELETE /api/financial-records/{id}`
 
