@@ -64,19 +64,21 @@ public class DashboardService : IDashboardService
 
     private async Task<AlertsSummary> GetAlertsSummaryAsync(CancellationToken cancellationToken = default)
     {
-        var activeAlerts = await _context.MileageAlerts
+        var pending = await _context.MileageAlerts
             .AsNoTracking()
             .Include(a => a.Vehicle)
             .Where(a => a.IsActive && !a.Vehicle.IsDeleted)
-            .ToListAsync(cancellationToken);
+            .CountAsync(cancellationToken);
 
-        var dueCount = activeAlerts.Count(a =>
-            a.NextAlertDate != null && DateTime.UtcNow >= a.NextAlertDate
-        );
+        var completed = await _context.MileageAlerts
+            .AsNoTracking()
+            .Include(a => a.Vehicle)
+            .Where(a => !a.IsActive && !a.Vehicle.IsDeleted)
+            .CountAsync(cancellationToken);
 
         return new AlertsSummary(
-            Active: activeAlerts.Count,
-            Overdue: dueCount
+            Pending: pending,
+            Completed: completed
         );
     }
 

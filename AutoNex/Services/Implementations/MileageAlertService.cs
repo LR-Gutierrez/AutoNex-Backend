@@ -120,7 +120,7 @@ public class MileageAlertService : IMileageAlertService
         var alert = await _context.MileageAlerts.FindAsync(new object[] { id }, cancellationToken);
         if (alert is null) return false;
 
-        alert.IsActive = false;
+        alert.IsDeleted = true;
         alert.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         return true;

@@ -30,6 +30,6 @@ public record LowStockItem(
 );
 
 public record AlertsSummary(
-    int Active,
-    int Overdue
+    int Pending,
+    int Completed
 );
