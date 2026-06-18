@@ -14,10 +14,12 @@ namespace AutoNex.Controllers;
 public class ServiceOrdersController : ControllerBase
 {
     private readonly IServiceOrderService _serviceOrderService;
+    private readonly IDashboardNotifier _dashboardNotifier;
 
-    public ServiceOrdersController(IServiceOrderService serviceOrderService)
+    public ServiceOrdersController(IServiceOrderService serviceOrderService, IDashboardNotifier dashboardNotifier)
     {
         _serviceOrderService = serviceOrderService;
+        _dashboardNotifier = dashboardNotifier;
     }
 
     [HttpGet]
@@ -49,6 +51,7 @@ public class ServiceOrdersController : ControllerBase
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var order = await _serviceOrderService.CreateAsync(request, userId);
+        await _dashboardNotifier.NotifyAllAsync();
         return CreatedAtAction(nameof(GetById), new { id = order.Id },
             ApiResponse<ServiceOrderResponse>.Ok(order, "Orden creada exitosamente"));
     }
@@ -60,6 +63,7 @@ public class ServiceOrdersController : ControllerBase
         if (order is null)
             return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
 
+        await _dashboardNotifier.NotifyAllAsync();
         return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Orden actualizada exitosamente"));
     }
 
@@ -70,6 +74,7 @@ public class ServiceOrdersController : ControllerBase
         if (order is null)
             return NotFound(ApiResponse<ServiceOrderResponse>.Fail("Orden no encontrada"));
 
+        await _dashboardNotifier.NotifyAllAsync();
         return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Estado actualizado exitosamente"));
     }
 }

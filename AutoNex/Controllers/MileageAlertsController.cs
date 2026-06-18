@@ -15,11 +15,16 @@ public class MileageAlertsController : ControllerBase
 {
     private readonly IMileageAlertService _mileageAlertService;
     private readonly INotificationService _notificationService;
+    private readonly IDashboardNotifier _dashboardNotifier;
 
-    public MileageAlertsController(IMileageAlertService mileageAlertService, INotificationService notificationService)
+    public MileageAlertsController(
+        IMileageAlertService mileageAlertService,
+        INotificationService notificationService,
+        IDashboardNotifier dashboardNotifier)
     {
         _mileageAlertService = mileageAlertService;
         _notificationService = notificationService;
+        _dashboardNotifier = dashboardNotifier;
     }
 
     [HttpGet]
@@ -43,6 +48,7 @@ public class MileageAlertsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateMileageAlertRequest request)
     {
         var alert = await _mileageAlertService.CreateAsync(request);
+        await _dashboardNotifier.NotifyAllAsync();
         return CreatedAtAction(nameof(GetById), new { id = alert.Id },
             ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada exitosamente"));
     }
@@ -74,6 +80,7 @@ public class MileageAlertsController : ControllerBase
         try
         {
             var alerts = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId);
+            await _dashboardNotifier.NotifyAllAsync();
             return Ok(ApiResponse<List<MileageAlertResponse>>.Ok(alerts, "Alertas creadas/actualizadas exitosamente"));
         }
         catch (KeyNotFoundException ex)
@@ -89,6 +96,7 @@ public class MileageAlertsController : ControllerBase
         if (alert is null)
             return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
 
+        await _dashboardNotifier.NotifyAllAsync();
         return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta atendida exitosamente"));
     }
 

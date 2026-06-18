@@ -3,8 +3,10 @@ using AutoNex.DTOs;
 using AutoNex.DTOs.Notifications;
 using AutoNex.Enums;
 using AutoNex.Helpers;
+using AutoNex.Hubs;
 using AutoNex.Models;
 using AutoNex.Services.Interfaces;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoNex.Services.Implementations;
@@ -13,11 +15,16 @@ public class NotificationService : INotificationService
 {
     private readonly AppDbContext _context;
     private readonly ITwilioService _twilioService;
+    private readonly IHubContext<NotificationsHub> _hubContext;
 
-    public NotificationService(AppDbContext context, ITwilioService twilioService)
+    public NotificationService(
+        AppDbContext context,
+        ITwilioService twilioService,
+        IHubContext<NotificationsHub> hubContext)
     {
         _context = context;
         _twilioService = twilioService;
+        _hubContext = hubContext;
     }
 
     public async Task<PagedResponse<NotificationResponse>> GetAllAsync(int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
@@ -82,7 +89,11 @@ public class NotificationService : INotificationService
 
         await _context.SaveChangesAsync();
 
-        return (await GetByIdAsync(notification.Id))!;
+        var response = (await GetByIdAsync(notification.Id))!;
+
+        await _hubContext.Clients.Group("all").SendAsync("NewNotification", response);
+
+        return response;
     }
 
     public async Task<NotificationResponse?> SendReminderAsync(int alertId)

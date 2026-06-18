@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using AutoNex.Data;
 using AutoNex.Enums;
 using AutoNex.Helpers;
+using AutoNex.Hubs;
 using AutoNex.Middleware;
 using AutoNex.Services.Implementations;
 using AutoNex.Services.Interfaces;
@@ -82,6 +83,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IInventoryMovementService, InventoryMovementService>();
 builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
@@ -105,8 +107,11 @@ builder.Services.AddControllers()
             return new BadRequestObjectResult(response);
         };
     });
+builder.Services.AddSignalR();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
+builder.Services.AddHostedService<MileageAlertBackgroundService>();
+builder.Services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
 
 var app = builder.Build();
 
@@ -135,6 +140,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseWebSockets();
 app.UseCors("AllowFrontend");
 
 app.Use(async (context, next) =>
@@ -158,6 +164,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<DashboardHub>("/hubs/dashboard");
+app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapHealthChecks("/health");
 
 app.Run();

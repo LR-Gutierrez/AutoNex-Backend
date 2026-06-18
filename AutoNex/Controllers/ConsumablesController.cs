@@ -13,10 +13,12 @@ namespace AutoNex.Controllers;
 public class ConsumablesController : ControllerBase
 {
     private readonly IConsumableService _consumableService;
+    private readonly IDashboardNotifier _dashboardNotifier;
 
-    public ConsumablesController(IConsumableService consumableService)
+    public ConsumablesController(IConsumableService consumableService, IDashboardNotifier dashboardNotifier)
     {
         _consumableService = consumableService;
+        _dashboardNotifier = dashboardNotifier;
     }
 
     [HttpGet]
@@ -48,6 +50,7 @@ public class ConsumablesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateConsumableRequest request)
     {
         var consumable = await _consumableService.CreateAsync(request);
+        await _dashboardNotifier.NotifyAllAsync();
         return CreatedAtAction(nameof(GetById), new { id = consumable.Id },
             ApiResponse<ConsumableResponse>.Ok(consumable, "Consumible creado exitosamente"));
     }
@@ -60,6 +63,7 @@ public class ConsumablesController : ControllerBase
         if (consumable is null)
             return NotFound(ApiResponse<ConsumableResponse>.Fail("Consumible no encontrado"));
 
+        await _dashboardNotifier.NotifyAllAsync();
         return Ok(ApiResponse<ConsumableResponse>.Ok(consumable, "Consumible actualizado exitosamente"));
     }
 

@@ -13,10 +13,12 @@ namespace AutoNex.Controllers;
 public class FinancialRecordsController : ControllerBase
 {
     private readonly IFinancialRecordService _financialRecordService;
+    private readonly IDashboardNotifier _dashboardNotifier;
 
-    public FinancialRecordsController(IFinancialRecordService financialRecordService)
+    public FinancialRecordsController(IFinancialRecordService financialRecordService, IDashboardNotifier dashboardNotifier)
     {
         _financialRecordService = financialRecordService;
+        _dashboardNotifier = dashboardNotifier;
     }
 
     [HttpGet]
@@ -41,6 +43,7 @@ public class FinancialRecordsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateFinancialRecordRequest request)
     {
         var record = await _financialRecordService.CreateAsync(request);
+        await _dashboardNotifier.NotifyAllAsync();
         return CreatedAtAction(nameof(GetById), new { id = record.Id },
             ApiResponse<FinancialRecordResponse>.Ok(record, "Registro financiero creado exitosamente"));
     }
@@ -53,6 +56,7 @@ public class FinancialRecordsController : ControllerBase
         if (record is null)
             return NotFound(ApiResponse<FinancialRecordResponse>.Fail("Registro financiero no encontrado"));
 
+        await _dashboardNotifier.NotifyAllAsync();
         return Ok(ApiResponse<FinancialRecordResponse>.Ok(record, "Registro financiero actualizado exitosamente"));
     }
 
