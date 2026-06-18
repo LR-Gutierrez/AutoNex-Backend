@@ -55,9 +55,9 @@ public class FinancialRecordService : IFinancialRecordService
         return record?.ToResponse();
     }
 
-    public async Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request)
+    public async Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request, int userId)
     {
-        var user = await _context.Users.FindAsync(request.UserId)
+        var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("Usuario no encontrado");
 
         var record = new FinancialRecord
@@ -67,7 +67,7 @@ public class FinancialRecordService : IFinancialRecordService
             Amount = request.Amount,
             Description = request.Description,
             Date = ToUtc(request.Date) ?? request.Date,
-            UserId = request.UserId
+            UserId = userId
         };
 
         _context.FinancialRecords.Add(record);

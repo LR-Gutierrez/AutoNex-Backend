@@ -7,6 +7,5 @@ public record CreateFinancialRecordRequest(
     FinancialCategory Category,
     decimal Amount,
     string? Description,
-    DateTime Date,
-    int UserId
+    DateTime Date
 );

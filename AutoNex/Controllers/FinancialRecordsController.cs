@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoNex.DTOs;
 using AutoNex.DTOs.FinancialRecords;
 using AutoNex.Helpers;
@@ -42,7 +43,8 @@ public class FinancialRecordsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateFinancialRecordRequest request)
     {
-        var record = await _financialRecordService.CreateAsync(request);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var record = await _financialRecordService.CreateAsync(request, userId);
         await _dashboardNotifier.NotifyAllAsync();
         return CreatedAtAction(nameof(GetById), new { id = record.Id },
             ApiResponse<FinancialRecordResponse>.Ok(record, "Registro financiero creado exitosamente"));

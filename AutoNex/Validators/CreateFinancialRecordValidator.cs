@@ -13,8 +13,5 @@ public class CreateFinancialRecordValidator : AbstractValidator<CreateFinancialR
 
         RuleFor(x => x.Description)
             .MaximumLength(500).When(x => !string.IsNullOrEmpty(x.Description));
-
-        RuleFor(x => x.UserId)
-            .GreaterThan(0).WithMessage("El usuario es obligatorio");
     }
 }
