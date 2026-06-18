@@ -123,19 +123,23 @@ public class ServiceOrderService : IServiceOrderService
 
         order.TotalAmount = total;
 
-        _context.ServiceOrders.Add(order);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            try
+            _context.ServiceOrders.Add(order);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
             {
                 await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error al crear/actualizar alerta de kilometraje para orden {OrderId}", order.Id);
-            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
         }
 
         return (await GetByIdAsync(order.Id, cancellationToken))!;
@@ -213,18 +217,22 @@ public class ServiceOrderService : IServiceOrderService
         order.TotalAmount = total;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            try
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
             {
                 await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error al crear/actualizar alerta de kilometraje para orden {OrderId}", order.Id);
-            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
         }
 
         return (await GetByIdAsync(id, cancellationToken))!;
@@ -257,7 +265,18 @@ public class ServiceOrderService : IServiceOrderService
         order.Status = request.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+
         return (await GetByIdAsync(id, cancellationToken))!;
     }
 
@@ -288,8 +307,18 @@ public class ServiceOrderService : IServiceOrderService
         order.OperationDate = request.OperationDate;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _context.FinancialRecords.Add(record);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            _context.FinancialRecords.Add(record);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
 
         return (await GetByIdAsync(id, cancellationToken))!;
     }
