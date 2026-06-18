@@ -80,10 +80,10 @@ public class ServiceOrdersController : ControllerBase
     }
 
     [HttpPost("{id}/pay")]
-    public async Task<IActionResult> Pay(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Pay(int id, [FromBody] PayOrderRequest request, CancellationToken cancellationToken)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var order = await _serviceOrderService.PayAsync(id, userId, cancellationToken);
+        var order = await _serviceOrderService.PayAsync(id, userId, request, cancellationToken);
 
         await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Orden marcada como pagada exitosamente"));

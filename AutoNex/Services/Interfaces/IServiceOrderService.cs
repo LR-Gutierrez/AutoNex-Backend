@@ -10,5 +10,5 @@ public interface IServiceOrderService
     Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId, CancellationToken cancellationToken = default);
     Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request, CancellationToken cancellationToken = default);
     Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default);
-    Task<ServiceOrderResponse> PayAsync(int id, int userId, CancellationToken cancellationToken = default);
+    Task<ServiceOrderResponse> PayAsync(int id, int userId, PayOrderRequest request, CancellationToken cancellationToken = default);
 }

@@ -261,7 +261,7 @@ public class ServiceOrderService : IServiceOrderService
         return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<ServiceOrderResponse> PayAsync(int id, int userId, CancellationToken cancellationToken = default)
+    public async Task<ServiceOrderResponse> PayAsync(int id, int userId, PayOrderRequest request, CancellationToken cancellationToken = default)
     {
         var order = await _context.ServiceOrders
             .Include(o => o.Vehicle)
@@ -283,6 +283,9 @@ public class ServiceOrderService : IServiceOrderService
         };
 
         order.Status = ServiceOrderStatus.Paid;
+        order.PaymentMethod = request.PaymentMethod;
+        order.OperationNumber = request.OperationNumber;
+        order.OperationDate = request.OperationDate;
         order.UpdatedAt = DateTime.UtcNow;
 
         _context.FinancialRecords.Add(record);
@@ -308,6 +311,9 @@ public class ServiceOrderService : IServiceOrderService
             order.Status,
             order.TotalAmount,
             order.Notes,
+            order.PaymentMethod,
+            order.OperationNumber,
+            order.OperationDate,
             order.CreatedAt,
             order.Items.Select(i => new ServiceOrderItemResponse(
                 i.Id,

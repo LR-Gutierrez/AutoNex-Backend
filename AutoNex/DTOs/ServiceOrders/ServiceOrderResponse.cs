@@ -17,6 +17,9 @@ public record ServiceOrderResponse(
     ServiceOrderStatus Status,
     decimal TotalAmount,
     string? Notes,
+    PaymentMethod? PaymentMethod,
+    string? OperationNumber,
+    DateTime? OperationDate,
     DateTime CreatedAt,
     List<ServiceOrderItemResponse> Items
 );

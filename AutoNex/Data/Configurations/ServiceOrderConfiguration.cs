@@ -36,6 +36,18 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             .HasColumnName("notes")
             .HasMaxLength(1000);
 
+        builder.Property(o => o.PaymentMethod)
+            .HasColumnName("payment_method")
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
+        builder.Property(o => o.OperationNumber)
+            .HasColumnName("operation_number")
+            .HasMaxLength(100);
+
+        builder.Property(o => o.OperationDate)
+            .HasColumnName("operation_date");
+
         builder.Property(o => o.IsDeleted).HasColumnName("is_deleted");
         builder.Property(o => o.CreatedAt).HasColumnName("created_at");
         builder.Property(o => o.UpdatedAt).HasColumnName("updated_at");
