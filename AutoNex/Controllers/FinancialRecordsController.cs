@@ -23,16 +23,16 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var records = await _financialRecordService.GetAllAsync(from, to, type, category, page, pageSize);
+        var records = await _financialRecordService.GetAllAsync(from, to, type, category, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<FinancialRecordResponse>>.Ok(records));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var record = await _financialRecordService.GetByIdAsync(id);
+        var record = await _financialRecordService.GetByIdAsync(id, cancellationToken);
         if (record is null)
             return NotFound(ApiResponse<FinancialRecordResponse>.Fail("Registro financiero no encontrado"));
 
@@ -41,32 +41,32 @@ public class FinancialRecordsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateFinancialRecordRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateFinancialRecordRequest request, CancellationToken cancellationToken)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var record = await _financialRecordService.CreateAsync(request, userId);
-        await _dashboardNotifier.NotifyAllAsync();
+        var record = await _financialRecordService.CreateAsync(request, userId, cancellationToken);
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = record.Id },
             ApiResponse<FinancialRecordResponse>.Ok(record, "Registro financiero creado exitosamente"));
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateFinancialRecordRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateFinancialRecordRequest request, CancellationToken cancellationToken)
     {
-        var record = await _financialRecordService.UpdateAsync(id, request);
+        var record = await _financialRecordService.UpdateAsync(id, request, cancellationToken);
         if (record is null)
             return NotFound(ApiResponse<FinancialRecordResponse>.Fail("Registro financiero no encontrado"));
 
-        await _dashboardNotifier.NotifyAllAsync();
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return Ok(ApiResponse<FinancialRecordResponse>.Ok(record, "Registro financiero actualizado exitosamente"));
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _financialRecordService.DeleteAsync(id);
+        var deleted = await _financialRecordService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Registro financiero no encontrado"));
 
@@ -74,16 +74,16 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetSummary([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken cancellationToken)
     {
-        var summary = await _financialRecordService.GetSummaryAsync(from, to);
+        var summary = await _financialRecordService.GetSummaryAsync(from, to, cancellationToken);
         return Ok(ApiResponse<FinancialSummaryResponse>.Ok(summary));
     }
 
     [HttpGet("by-category")]
-    public async Task<IActionResult> GetByCategory([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetByCategory([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken cancellationToken)
     {
-        var categories = await _financialRecordService.GetByCategoryAsync(from, to);
+        var categories = await _financialRecordService.GetByCategoryAsync(from, to, cancellationToken);
         return Ok(ApiResponse<List<CategorySummaryResponse>>.Ok(categories));
     }
 }

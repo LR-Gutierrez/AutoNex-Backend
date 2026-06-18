@@ -20,16 +20,16 @@ public class ToolsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var tools = await _toolService.GetAllAsync(category, status, page, pageSize);
+        var tools = await _toolService.GetAllAsync(category, status, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<ToolResponse>>.Ok(tools));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var tool = await _toolService.GetByIdAsync(id);
+        var tool = await _toolService.GetByIdAsync(id, cancellationToken);
         if (tool is null)
             return NotFound(ApiResponse<ToolResponse>.Fail("Herramienta no encontrada"));
 
@@ -38,18 +38,18 @@ public class ToolsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateToolRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateToolRequest request, CancellationToken cancellationToken)
     {
-        var tool = await _toolService.CreateAsync(request);
+        var tool = await _toolService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = tool.Id },
             ApiResponse<ToolResponse>.Ok(tool, "Herramienta creada exitosamente"));
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateToolRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateToolRequest request, CancellationToken cancellationToken)
     {
-        var tool = await _toolService.UpdateAsync(id, request);
+        var tool = await _toolService.UpdateAsync(id, request, cancellationToken);
         if (tool is null)
             return NotFound(ApiResponse<ToolResponse>.Fail("Herramienta no encontrada"));
 
@@ -58,9 +58,9 @@ public class ToolsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _toolService.DeleteAsync(id);
+        var deleted = await _toolService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Herramienta no encontrada"));
 

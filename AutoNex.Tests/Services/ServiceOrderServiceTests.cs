@@ -7,6 +7,8 @@ using AutoNex.Services.Implementations;
 using AutoNex.Services.Interfaces;
 using AutoNex.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace AutoNex.Tests.Services;
 
@@ -67,7 +69,8 @@ public class ServiceOrderServiceTests
     private static ServiceOrderService CreateService(AppDbContext context)
     {
         var alertService = new MockMileageAlertService();
-        return new ServiceOrderService(context, alertService);
+        var logger = Mock.Of<ILogger<ServiceOrderService>>();
+        return new ServiceOrderService(context, alertService, logger);
     }
 
     [Fact]
@@ -96,7 +99,7 @@ public class ServiceOrderServiceTests
         var result = await service.CreateAsync(request, 1);
 
         Assert.NotNull(result);
-        Assert.Equal(1, result.Items.Count);
+        Assert.Single(result.Items);
         Assert.Equal(45.00m, result.TotalAmount);
         Assert.Equal(ServiceOrderStatus.Open, result.Status);
     }
@@ -255,7 +258,7 @@ public class ServiceOrderServiceTests
 
 public class MockMileageAlertService : IMileageAlertService
 {
-    public Task<PagedResponse<DTOs.MileageAlerts.MileageAlertResponse>> GetAllAsync(bool? due, int? page, int? pageSize)
+    public Task<PagedResponse<DTOs.MileageAlerts.MileageAlertResponse>> GetAllAsync(bool? due, int? page, int? pageSize, CancellationToken cancellationToken = default)
         => Task.FromResult(new PagedResponse<DTOs.MileageAlerts.MileageAlertResponse>
         {
             Items = [],
@@ -264,21 +267,21 @@ public class MockMileageAlertService : IMileageAlertService
             PageSize = 10
         });
 
-    public Task<DTOs.MileageAlerts.MileageAlertResponse?> GetByIdAsync(int id)
+    public Task<DTOs.MileageAlerts.MileageAlertResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         => Task.FromResult<DTOs.MileageAlerts.MileageAlertResponse?>(null);
 
-    public Task<DTOs.MileageAlerts.MileageAlertResponse> CreateAsync(DTOs.MileageAlerts.CreateMileageAlertRequest request)
+    public Task<DTOs.MileageAlerts.MileageAlertResponse> CreateAsync(DTOs.MileageAlerts.CreateMileageAlertRequest request, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
 
-    public Task<DTOs.MileageAlerts.MileageAlertResponse?> UpdateAsync(int id, DTOs.MileageAlerts.UpdateMileageAlertRequest request)
+    public Task<DTOs.MileageAlerts.MileageAlertResponse?> UpdateAsync(int id, DTOs.MileageAlerts.UpdateMileageAlertRequest request, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
 
-    public Task<bool> DeleteAsync(int id)
+    public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
 
-    public Task<List<DTOs.MileageAlerts.MileageAlertResponse>> CreateOrUpdateFromOrderAsync(int orderId)
+    public Task<List<DTOs.MileageAlerts.MileageAlertResponse>> CreateOrUpdateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
         => Task.FromResult(new List<DTOs.MileageAlerts.MileageAlertResponse>());
 
-    public Task<DTOs.MileageAlerts.MileageAlertResponse?> AttendAsync(int id)
+    public Task<DTOs.MileageAlerts.MileageAlertResponse?> AttendAsync(int id, CancellationToken cancellationToken = default)
         => throw new NotImplementedException();
 }

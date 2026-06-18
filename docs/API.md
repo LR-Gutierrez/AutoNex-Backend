@@ -56,7 +56,21 @@ Requiere rol **Admin**. Crea un nuevo usuario.
 }
 ```
 
-**Response:** Misma estructura que Login (`userId`, `fullName`, `email`, `role`, `token`).
+**Response (201 Created):**
+
+```json
+{
+  "data": {
+    "userId": 2,
+    "fullName": "Juan Mecánico",
+    "email": "juan@autonex.com",
+    "role": "Mechanic",
+    "token": "eyJ..."
+  },
+  "success": true,
+  "message": "Usuario registrado exitosamente"
+}
+```
 
 **Roles válidos:** `Admin`, `Mechanic`, `Receptionist`
 
@@ -86,6 +100,10 @@ Actualiza un usuario. Requiere rol **Admin**.
   "phone": "04121234567"
 }
 ```
+
+### `DELETE /api/users/{id}`
+
+Soft delete de un usuario. Requiere rol **Admin**. Retorna `204 No Content`.
 
 ---
 
@@ -486,9 +504,17 @@ Actualiza el kilometraje semanal estimado.
 
 Desactiva la alerta (IsActive = false).
 
+### `POST /api/mileage-alerts/{id}/attend`
+
+Marca la alerta como atendida (desactiva `IsActive`).
+
+### `POST /api/mileage-alerts/from-order/{orderId}`
+
+Requiere rol **Admin**. Genera o actualiza alertas de kilometraje basadas en los servicios de una orden de servicio existente.
+
 ### `POST /api/mileage-alerts/{id}/send`
 
-Genera un recordatorio manual. (El envío real por WhatsApp se integrará en etapa posterior).
+Envía un recordatorio manual por WhatsApp para la alerta especificada.
 
 ---
 
@@ -722,6 +748,61 @@ Historial de movimientos de inventario (entradas/salidas de consumibles y herram
 ### `GET /api/inventory-movements/{id}`
 
 Obtiene un movimiento por ID.
+
+---
+
+## Dashboard
+
+### `GET /api/dashboard`
+
+Obtiene un resumen del dashboard para el período especificado.
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Descripción |
+| ----------- | ------ | ------------- |
+| `startDate` | DateTime? | Fecha inicial (default: hoy) |
+| `endDate` | DateTime? | Fecha final (default: mañana) |
+
+**Response:**
+
+```json
+{
+  "data": {
+    "orders": {
+      "total": 10,
+      "open": 3,
+      "inProgress": 2,
+      "completed": 5,
+      "totalAmount": 4500.00
+    },
+    "lowStock": {
+      "items": [
+        {
+          "id": 1,
+          "name": "Aceite 5W-30",
+          "stockQuantity": 1,
+          "minStock": 2
+        }
+      ],
+      "totalItems": 1
+    },
+    "alerts": {
+      "active": 5,
+      "overdue": 2
+    },
+    "financial": {
+      "totalIncome": 5000.00,
+      "totalExpenses": 3200.00,
+      "balance": 1800.00,
+      "incomeCount": 15,
+      "expenseCount": 8
+    }
+  },
+  "success": true,
+  "message": "Dashboard cargado correctamente"
+}
+```
 
 ---
 

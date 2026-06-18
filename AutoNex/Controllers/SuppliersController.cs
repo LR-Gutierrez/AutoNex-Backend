@@ -20,16 +20,16 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var suppliers = await _supplierService.GetAllAsync(page, pageSize);
+        var suppliers = await _supplierService.GetAllAsync(page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<SupplierResponse>>.Ok(suppliers));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var supplier = await _supplierService.GetByIdAsync(id);
+        var supplier = await _supplierService.GetByIdAsync(id, cancellationToken);
         if (supplier is null)
             return NotFound(ApiResponse<SupplierResponse>.Fail("Proveedor no encontrado"));
 
@@ -38,18 +38,18 @@ public class SuppliersController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateSupplierRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateSupplierRequest request, CancellationToken cancellationToken)
     {
-        var supplier = await _supplierService.CreateAsync(request);
+        var supplier = await _supplierService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = supplier.Id },
             ApiResponse<SupplierResponse>.Ok(supplier, "Proveedor creado exitosamente"));
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierRequest request, CancellationToken cancellationToken)
     {
-        var supplier = await _supplierService.UpdateAsync(id, request);
+        var supplier = await _supplierService.UpdateAsync(id, request, cancellationToken);
         if (supplier is null)
             return NotFound(ApiResponse<SupplierResponse>.Fail("Proveedor no encontrado"));
 
@@ -58,9 +58,9 @@ public class SuppliersController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _supplierService.DeleteAsync(id);
+        var deleted = await _supplierService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Proveedor no encontrado"));
 

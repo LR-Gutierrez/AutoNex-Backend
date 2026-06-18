@@ -30,26 +30,26 @@ public class DashboardNotifier : IDashboardNotifier
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
 
-            var todayData = await dashboardService.GetDashboardAsync(today, tomorrow);
+            var todayData = await dashboardService.GetDashboardAsync(today, tomorrow, cancellationToken);
             await _hubContext.Clients.Group("today").SendAsync("DashboardUpdated", todayData, cancellationToken);
 
             var yesterdayStart = today.AddDays(-1);
-            var yesterdayData = await dashboardService.GetDashboardAsync(yesterdayStart, today);
+            var yesterdayData = await dashboardService.GetDashboardAsync(yesterdayStart, today, cancellationToken);
             await _hubContext.Clients.Group("yesterday").SendAsync("DashboardUpdated", yesterdayData, cancellationToken);
 
             var dayOfWeek = (int)today.DayOfWeek;
             var weekStart = today.AddDays(-(dayOfWeek == 0 ? 6 : dayOfWeek - 1));
             var weekEnd = weekStart.AddDays(7);
-            var weekData = await dashboardService.GetDashboardAsync(weekStart, weekEnd);
+            var weekData = await dashboardService.GetDashboardAsync(weekStart, weekEnd, cancellationToken);
             await _hubContext.Clients.Group("this-week").SendAsync("DashboardUpdated", weekData, cancellationToken);
 
             var monthStart = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var monthEnd = monthStart.AddMonths(1);
-            var monthData = await dashboardService.GetDashboardAsync(monthStart, monthEnd);
+            var monthData = await dashboardService.GetDashboardAsync(monthStart, monthEnd, cancellationToken);
             await _hubContext.Clients.Group("this-month").SendAsync("DashboardUpdated", monthData, cancellationToken);
 
             var lastMonthStart = monthStart.AddMonths(-1);
-            var lastMonthData = await dashboardService.GetDashboardAsync(lastMonthStart, monthStart);
+            var lastMonthData = await dashboardService.GetDashboardAsync(lastMonthStart, monthStart, cancellationToken);
             await _hubContext.Clients.Group("last-month").SendAsync("DashboardUpdated", lastMonthData, cancellationToken);
         }
         catch (Exception ex)

@@ -23,7 +23,7 @@ public class TwilioService : ITwilioService
         !string.IsNullOrEmpty(_settings.AuthToken) &&
         !string.IsNullOrEmpty(_settings.FromNumber);
 
-    public async Task<bool> SendWhatsAppAsync(string to, string message)
+    public async Task<bool> SendWhatsAppAsync(string to, string message, CancellationToken cancellationToken = default)
     {
         if (!IsConfigured) return false;
 
@@ -50,9 +50,3 @@ public class TwilioService : ITwilioService
     }
 }
 
-public class TwilioSettings
-{
-    public string AccountSid { get; set; } = string.Empty;
-    public string AuthToken { get; set; } = string.Empty;
-    public string FromNumber { get; set; } = string.Empty;
-}

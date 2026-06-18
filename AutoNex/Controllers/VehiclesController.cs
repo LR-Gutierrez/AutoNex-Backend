@@ -20,16 +20,16 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var vehicles = await _vehicleService.GetAllAsync(search, page, pageSize);
+        var vehicles = await _vehicleService.GetAllAsync(search, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<VehicleResponse>>.Ok(vehicles));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var vehicle = await _vehicleService.GetByIdAsync(id);
+        var vehicle = await _vehicleService.GetByIdAsync(id, cancellationToken);
         if (vehicle is null)
             return NotFound(ApiResponse<VehicleResponse>.Fail("Vehículo no encontrado"));
 
@@ -37,11 +37,11 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateVehicleRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateVehicleRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var vehicle = await _vehicleService.CreateAsync(request);
+            var vehicle = await _vehicleService.CreateAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = vehicle.Id },
                 ApiResponse<VehicleResponse>.Ok(vehicle, "Vehículo creado exitosamente"));
         }
@@ -52,9 +52,9 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateVehicleRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateVehicleRequest request, CancellationToken cancellationToken)
     {
-        var vehicle = await _vehicleService.UpdateAsync(id, request);
+        var vehicle = await _vehicleService.UpdateAsync(id, request, cancellationToken);
         if (vehicle is null)
             return NotFound(ApiResponse<VehicleResponse>.Fail("Vehículo no encontrado"));
 
@@ -62,9 +62,9 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _vehicleService.DeleteAsync(id);
+        var deleted = await _vehicleService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Vehículo no encontrado"));
 

@@ -16,24 +16,25 @@ public class DashboardService : IDashboardService
         _context = context;
     }
 
-    public async Task<DashboardResponse> GetDashboardAsync(DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<DashboardResponse> GetDashboardAsync(DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
     {
         var orderStart = ToUtc(startDate) ?? DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
         var orderEnd = ToUtc(endDate) ?? orderStart.AddDays(1);
 
-        var orders = await GetOrdersSummaryAsync(orderStart, orderEnd);
-        var lowStock = await GetLowStockSummaryAsync();
-        var alerts = await GetAlertsSummaryAsync();
-        var financial = await GetFinancialSummaryAsync(orderStart, orderEnd);
+        var orders = await GetOrdersSummaryAsync(orderStart, orderEnd, cancellationToken);
+        var lowStock = await GetLowStockSummaryAsync(cancellationToken);
+        var alerts = await GetAlertsSummaryAsync(cancellationToken);
+        var financial = await GetFinancialSummaryAsync(orderStart, orderEnd, cancellationToken);
 
         return new DashboardResponse(orders, lowStock, alerts, financial);
     }
 
-    private async Task<OrdersSummary> GetOrdersSummaryAsync(DateTime start, DateTime end)
+    private async Task<OrdersSummary> GetOrdersSummaryAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         var orders = await _context.ServiceOrders
+            .AsNoTracking()
             .Where(o => o.Date >= start && o.Date < end && !o.IsDeleted)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new OrdersSummary(
             Total: orders.Count,
@@ -44,9 +45,10 @@ public class DashboardService : IDashboardService
         );
     }
 
-    private async Task<LowStockSummary> GetLowStockSummaryAsync()
+    private async Task<LowStockSummary> GetLowStockSummaryAsync(CancellationToken cancellationToken = default)
     {
         var items = await _context.Consumables
+            .AsNoTracking()
             .Where(c => c.StockQuantity <= c.MinStock)
             .OrderBy(c => c.StockQuantity)
             .Select(c => new LowStockItem(
@@ -55,17 +57,18 @@ public class DashboardService : IDashboardService
                 c.StockQuantity,
                 c.MinStock
             ))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new LowStockSummary(Items: items, TotalItems: items.Count);
     }
 
-    private async Task<AlertsSummary> GetAlertsSummaryAsync()
+    private async Task<AlertsSummary> GetAlertsSummaryAsync(CancellationToken cancellationToken = default)
     {
         var activeAlerts = await _context.MileageAlerts
+            .AsNoTracking()
             .Include(a => a.Vehicle)
             .Where(a => a.IsActive && !a.Vehicle.IsDeleted)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var dueCount = activeAlerts.Count(a =>
             a.NextAlertDate != null && DateTime.UtcNow >= a.NextAlertDate
@@ -77,11 +80,12 @@ public class DashboardService : IDashboardService
         );
     }
 
-    private async Task<FinancialSummaryResponse> GetFinancialSummaryAsync(DateTime start, DateTime end)
+    private async Task<FinancialSummaryResponse> GetFinancialSummaryAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         var records = await _context.FinancialRecords
+            .AsNoTracking()
             .Where(r => r.Date >= start && r.Date < end)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var income = records.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
         var expenses = records.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);

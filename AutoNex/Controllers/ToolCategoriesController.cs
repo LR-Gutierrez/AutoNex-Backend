@@ -20,16 +20,16 @@ public class ToolCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var categories = await _toolCategoryService.GetAllAsync(page, pageSize);
+        var categories = await _toolCategoryService.GetAllAsync(page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<ToolCategoryResponse>>.Ok(categories));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var category = await _toolCategoryService.GetByIdAsync(id);
+        var category = await _toolCategoryService.GetByIdAsync(id, cancellationToken);
         if (category is null)
             return NotFound(ApiResponse<ToolCategoryResponse>.Fail("Categoría no encontrada"));
 
@@ -38,18 +38,18 @@ public class ToolCategoriesController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateToolCategoryRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateToolCategoryRequest request, CancellationToken cancellationToken)
     {
-        var category = await _toolCategoryService.CreateAsync(request);
+        var category = await _toolCategoryService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = category.Id },
             ApiResponse<ToolCategoryResponse>.Ok(category, "Categoría creada exitosamente"));
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateToolCategoryRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateToolCategoryRequest request, CancellationToken cancellationToken)
     {
-        var category = await _toolCategoryService.UpdateAsync(id, request);
+        var category = await _toolCategoryService.UpdateAsync(id, request, cancellationToken);
         if (category is null)
             return NotFound(ApiResponse<ToolCategoryResponse>.Fail("Categoría no encontrada"));
 
@@ -58,9 +58,9 @@ public class ToolCategoriesController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _toolCategoryService.DeleteAsync(id);
+        var deleted = await _toolCategoryService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Categoría no encontrada"));
 

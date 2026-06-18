@@ -17,10 +17,12 @@ public class ClientService : IClientService
         _context = context;
     }
 
-    public async Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize)
+    public async Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Clients
+            .AsNoTracking()
             .Include(c => c.Vehicles)
+            .Where(c => !c.IsDeleted)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -29,19 +31,20 @@ public class ClientService : IClientService
 
         query = query.OrderByDescending(c => c.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken);
     }
 
-    public async Task<ClientResponse?> GetByIdAsync(int id)
+    public async Task<ClientResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var client = await _context.Clients
+            .AsNoTracking()
             .Include(c => c.Vehicles)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         return client?.ToResponse();
     }
 
-    public async Task<ClientResponse> CreateAsync(CreateClientRequest request)
+    public async Task<ClientResponse> CreateAsync(CreateClientRequest request, CancellationToken cancellationToken = default)
     {
         var client = new Client
         {
@@ -52,14 +55,14 @@ public class ClientService : IClientService
         };
 
         _context.Clients.Add(client);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return client.ToResponse();
     }
 
-    public async Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request)
+    public async Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(id);
+        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken);
         if (client is null) return null;
 
         client.FullName = request.FullName;
@@ -68,18 +71,18 @@ public class ClientService : IClientService
         client.Address = request.Address;
         client.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return client.ToResponse();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(id);
+        var client = await _context.Clients.FindAsync(new object[] { id }, cancellationToken);
         if (client is null) return false;
 
         client.IsDeleted = true;
         client.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

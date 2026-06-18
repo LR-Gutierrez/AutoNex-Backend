@@ -108,6 +108,7 @@ POST   /api/auth/login        → Obtener JWT
 GET    /api/users              → Listar usuarios (Admin only)
 GET    /api/users/{id}         → Obtener usuario por ID
 PUT    /api/users/{id}         → Actualizar usuario (Admin only)
+DELETE /api/users/{id}         → Soft delete (Admin only)
 ```
 
 ### 5.3 Clientes
@@ -154,12 +155,22 @@ DELETE /api/consumables/{id}             → Soft delete
 
 ```
 GET    /api/tools                → Listar (filtro por categoría/estado)
+GET    /api/tools/{id}           → Obtener herramienta por ID
 POST   /api/tools                → Crear
 PUT    /api/tools/{id}           → Actualizar estado/cantidad
 DELETE /api/tools/{id}           → Soft delete
+
+### 5.8 Categorías de Herramientas
+
+```
+GET    /api/tool-categories           → Listar categorías
+GET    /api/tool-categories/{id}      → Obtener categoría por ID
+POST   /api/tool-categories           → Crear (Admin only)
+PUT    /api/tool-categories/{id}      → Actualizar (Admin only)
+DELETE /api/tool-categories/{id}      → Soft delete (Admin only)
 ```
 
-### 5.8 Servicios (Catálogo)
+### 5.9 Servicios (Catálogo)
 
 ```
 GET    /api/services                      → Listar servicios
@@ -169,7 +180,7 @@ PUT    /api/services/{id}                 → Actualizar precio/nombre
 DELETE /api/services/{id}                 → Soft delete
 ```
 
-### 5.9 Órdenes de Servicio
+### 5.10 Órdenes de Servicio
 
 ```
 GET    /api/service-orders                    → Listar (filtro por fecha/cliente/vehículo/estado)
@@ -179,17 +190,20 @@ PUT    /api/service-orders/{id}               → Actualizar (items, notas)
 PATCH  /api/service-orders/{id}/status        → Cambiar estado (Open→InProgress→Completed→Cancelled)
 ```
 
-### 5.10 Alertas de Kilometraje
+### 5.11 Alertas de Kilometraje
 
 ```
-GET    /api/mileage-alerts                   → Listar alertas
-GET    /api/mileage-alerts?due=true          → Alertas próximas a vencer
+GET    /api/mileage-alerts                   → Listar alertas (opcional `?due=true`)
+GET    /api/mileage-alerts/{id}              → Obtener alerta por ID
 POST   /api/mileage-alerts                   → Configurar alerta para vehículo
 PUT    /api/mileage-alerts/{id}              → Actualizar km estimados/semana
+DELETE /api/mileage-alerts/{id}              → Desactivar alerta
 POST   /api/mileage-alerts/{id}/send         → Enviar recordatorio (WhatsApp via Twilio)
+POST   /api/mileage-alerts/{id}/attend       → Marcar alerta como atendida
+POST   /api/mileage-alerts/from-order/{orderId} → Generar/actualizar alertas desde orden (Admin)
 ```
 
-### 5.11 Finanzas
+### 5.12 Finanzas
 
 ```
 GET    /api/financial-records                → Listar (filtro por tipo/fecha/categoría)
@@ -201,14 +215,20 @@ GET    /api/financial-records/summary        → Resumen por período (ingresos 
 GET    /api/financial-records/by-category    → Agrupado por categoría
 ```
 
-### 5.12 Notificaciones
+### 5.13 Notificaciones
 
 ```
 GET    /api/notifications                    → Historial de mensajes enviados
 POST   /api/notifications/send-whatsapp      → Enviar mensaje manual (disparador)
 ```
 
-### 5.13 Movimientos de Inventario
+### 5.14 Dashboard
+
+```
+GET    /api/dashboard         → Dashboard con resumen de órdenes, stock bajo, alertas y finanzas (opcional `?startDate=&endDate=`)
+```
+
+### 5.15 Movimientos de Inventario
 
 ```
 GET    /api/inventory-movements              → Historial (filtro por consumible/herramienta)

@@ -5,9 +5,9 @@ namespace AutoNex.Services.Interfaces;
 
 public interface IServiceOrderService
 {
-    Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize);
-    Task<ServiceOrderResponse?> GetByIdAsync(int id);
-    Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId);
-    Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request);
-    Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request);
+    Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default);
+    Task<ServiceOrderResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId, CancellationToken cancellationToken = default);
+    Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request, CancellationToken cancellationToken = default);
+    Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default);
 }

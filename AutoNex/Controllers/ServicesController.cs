@@ -20,16 +20,16 @@ public class ServicesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var services = await _serviceCatalogService.GetAllAsync(page, pageSize);
+        var services = await _serviceCatalogService.GetAllAsync(page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<ServiceResponse>>.Ok(services));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var service = await _serviceCatalogService.GetByIdAsync(id);
+        var service = await _serviceCatalogService.GetByIdAsync(id, cancellationToken);
         if (service is null)
             return NotFound(ApiResponse<ServiceResponse>.Fail("Servicio no encontrado"));
 
@@ -38,18 +38,18 @@ public class ServicesController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateServiceRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateServiceRequest request, CancellationToken cancellationToken)
     {
-        var service = await _serviceCatalogService.CreateAsync(request);
+        var service = await _serviceCatalogService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = service.Id },
             ApiResponse<ServiceResponse>.Ok(service, "Servicio creado exitosamente"));
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceRequest request, CancellationToken cancellationToken)
     {
-        var service = await _serviceCatalogService.UpdateAsync(id, request);
+        var service = await _serviceCatalogService.UpdateAsync(id, request, cancellationToken);
         if (service is null)
             return NotFound(ApiResponse<ServiceResponse>.Fail("Servicio no encontrado"));
 
@@ -58,9 +58,9 @@ public class ServicesController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _serviceCatalogService.DeleteAsync(id);
+        var deleted = await _serviceCatalogService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Servicio no encontrado"));
 

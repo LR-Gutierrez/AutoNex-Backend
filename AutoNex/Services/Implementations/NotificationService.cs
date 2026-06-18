@@ -27,9 +27,10 @@ public class NotificationService : INotificationService
         _hubContext = hubContext;
     }
 
-    public async Task<PagedResponse<NotificationResponse>> GetAllAsync(int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
+    public async Task<PagedResponse<NotificationResponse>> GetAllAsync(int? clientId, int? vehicleId, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Notifications
+            .AsNoTracking()
             .Include(n => n.Client)
             .Include(n => n.Vehicle)
             .Where(n => !n.Client.IsDeleted)
@@ -44,22 +45,23 @@ public class NotificationService : INotificationService
 
         query = query.OrderByDescending(n => n.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse(), cancellationToken);
     }
 
-    public async Task<NotificationResponse?> GetByIdAsync(int id)
+    public async Task<NotificationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var notification = await _context.Notifications
+            .AsNoTracking()
             .Include(n => n.Client)
             .Include(n => n.Vehicle)
-            .FirstOrDefaultAsync(n => n.Id == id);
+            .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
 
         return notification?.ToResponse();
     }
 
-    public async Task<NotificationResponse> SendAsync(SendNotificationRequest request)
+    public async Task<NotificationResponse> SendAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(request.ClientId)
+        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
         var notification = new Notification
@@ -73,7 +75,7 @@ public class NotificationService : INotificationService
         };
 
         _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
         {
@@ -87,21 +89,21 @@ public class NotificationService : INotificationService
             notification.SentAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
-        var response = (await GetByIdAsync(notification.Id))!;
+        var response = (await GetByIdAsync(notification.Id, cancellationToken))!;
 
-        await _hubContext.Clients.Group("all").SendAsync("NewNotification", response);
+        await _hubContext.Clients.Group("all").SendAsync("NewNotification", response, cancellationToken);
 
         return response;
     }
 
-    public async Task<NotificationResponse?> SendReminderAsync(int alertId)
+    public async Task<NotificationResponse?> SendReminderAsync(int alertId, CancellationToken cancellationToken = default)
     {
         var alert = await _context.MileageAlerts
             .Include(a => a.Vehicle)
                 .ThenInclude(v => v.Client)
-            .FirstOrDefaultAsync(a => a.Id == alertId);
+            .FirstOrDefaultAsync(a => a.Id == alertId, cancellationToken);
 
         if (alert is null) return null;
 
@@ -114,7 +116,7 @@ public class NotificationService : INotificationService
             .Where(o => o.VehicleId == alert.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
             .OrderByDescending(o => o.Date)
             .Select(o => (int?)o.CurrentKm)
-            .FirstOrDefaultAsync() ?? 0;
+            .FirstOrDefaultAsync(cancellationToken) ?? 0;
 
         var vehicleInfo = $"{alert.Vehicle.Brand} {alert.Vehicle.Model} ({alert.Vehicle.LicensePlate})";
         var message = $"Recordatorio: El vehículo {vehicleInfo} requiere atención. " +
@@ -129,6 +131,6 @@ public class NotificationService : INotificationService
             message
         );
 
-        return await SendAsync(request);
+        return await SendAsync(request, cancellationToken);
     }
 }

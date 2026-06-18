@@ -5,9 +5,9 @@ namespace AutoNex.Services.Interfaces;
 
 public interface IClientService
 {
-    Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize);
-    Task<ClientResponse?> GetByIdAsync(int id);
-    Task<ClientResponse> CreateAsync(CreateClientRequest request);
-    Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request);
-    Task<bool> DeleteAsync(int id);
+    Task<PagedResponse<ClientResponse>> GetAllAsync(string? search, int? page, int? pageSize, CancellationToken cancellationToken = default);
+    Task<ClientResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<ClientResponse> CreateAsync(CreateClientRequest request, CancellationToken cancellationToken = default);
+    Task<ClientResponse?> UpdateAsync(int id, UpdateClientRequest request, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -18,9 +18,10 @@ public class ToolService : IToolService
         _context = context;
     }
 
-    public async Task<PagedResponse<ToolResponse>> GetAllAsync(string? categoryName, string? status, int? page, int? pageSize)
+    public async Task<PagedResponse<ToolResponse>> GetAllAsync(string? categoryName, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Tools
+            .AsNoTracking()
             .Include(t => t.ToolCategory)
             .Where(t => !t.ToolCategory.IsDeleted)
             .AsQueryable();
@@ -33,19 +34,20 @@ public class ToolService : IToolService
 
         query = query.OrderByDescending(t => t.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse(), cancellationToken);
     }
 
-    public async Task<ToolResponse?> GetByIdAsync(int id)
+    public async Task<ToolResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var tool = await _context.Tools
+            .AsNoTracking()
             .Include(t => t.ToolCategory)
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
         return tool?.ToResponse();
     }
 
-    public async Task<ToolResponse> CreateAsync(CreateToolRequest request)
+    public async Task<ToolResponse> CreateAsync(CreateToolRequest request, CancellationToken cancellationToken = default)
     {
         var tool = new Tool
         {
@@ -57,14 +59,14 @@ public class ToolService : IToolService
         };
 
         _context.Tools.Add(tool);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(tool.Id))!;
+        return (await GetByIdAsync(tool.Id, cancellationToken))!;
     }
 
-    public async Task<ToolResponse?> UpdateAsync(int id, UpdateToolRequest request)
+    public async Task<ToolResponse?> UpdateAsync(int id, UpdateToolRequest request, CancellationToken cancellationToken = default)
     {
-        var tool = await _context.Tools.FindAsync(id);
+        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken);
         if (tool is null) return null;
 
         tool.Name = request.Name;
@@ -74,18 +76,18 @@ public class ToolService : IToolService
         tool.PurchaseDate = request.PurchaseDate;
         tool.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return (await GetByIdAsync(id))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var tool = await _context.Tools.FindAsync(id);
+        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken);
         if (tool is null) return false;
 
         tool.IsDeleted = true;
         tool.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

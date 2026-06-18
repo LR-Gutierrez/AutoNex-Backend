@@ -5,9 +5,9 @@ namespace AutoNex.Services.Interfaces;
 
 public interface ISupplierService
 {
-    Task<PagedResponse<SupplierResponse>> GetAllAsync(int? page, int? pageSize);
-    Task<SupplierResponse?> GetByIdAsync(int id);
-    Task<SupplierResponse> CreateAsync(CreateSupplierRequest request);
-    Task<SupplierResponse?> UpdateAsync(int id, UpdateSupplierRequest request);
-    Task<bool> DeleteAsync(int id);
+    Task<PagedResponse<SupplierResponse>> GetAllAsync(int? page, int? pageSize, CancellationToken cancellationToken = default);
+    Task<SupplierResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<SupplierResponse> CreateAsync(CreateSupplierRequest request, CancellationToken cancellationToken = default);
+    Task<SupplierResponse?> UpdateAsync(int id, UpdateSupplierRequest request, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

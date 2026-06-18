@@ -28,16 +28,16 @@ public class MileageAlertsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] bool? due, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] bool? due, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var alerts = await _mileageAlertService.GetAllAsync(due, page, pageSize);
+        var alerts = await _mileageAlertService.GetAllAsync(due, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<MileageAlertResponse>>.Ok(alerts));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var alert = await _mileageAlertService.GetByIdAsync(id);
+        var alert = await _mileageAlertService.GetByIdAsync(id, cancellationToken);
         if (alert is null)
             return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
 
@@ -45,18 +45,18 @@ public class MileageAlertsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateMileageAlertRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateMileageAlertRequest request, CancellationToken cancellationToken)
     {
-        var alert = await _mileageAlertService.CreateAsync(request);
-        await _dashboardNotifier.NotifyAllAsync();
+        var alert = await _mileageAlertService.CreateAsync(request, cancellationToken);
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = alert.Id },
             ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta creada exitosamente"));
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateMileageAlertRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateMileageAlertRequest request, CancellationToken cancellationToken)
     {
-        var alert = await _mileageAlertService.UpdateAsync(id, request);
+        var alert = await _mileageAlertService.UpdateAsync(id, request, cancellationToken);
         if (alert is null)
             return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
 
@@ -64,9 +64,9 @@ public class MileageAlertsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _mileageAlertService.DeleteAsync(id);
+        var deleted = await _mileageAlertService.DeleteAsync(id, cancellationToken);
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
 
@@ -75,12 +75,12 @@ public class MileageAlertsController : ControllerBase
 
     [HttpPost("from-order/{orderId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateFromOrder(int orderId)
+    public async Task<IActionResult> CreateFromOrder(int orderId, CancellationToken cancellationToken)
     {
         try
         {
-            var alerts = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId);
-            await _dashboardNotifier.NotifyAllAsync();
+            var alerts = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId, cancellationToken);
+            await _dashboardNotifier.NotifyAllAsync(cancellationToken);
             return Ok(ApiResponse<List<MileageAlertResponse>>.Ok(alerts, "Alertas creadas/actualizadas exitosamente"));
         }
         catch (KeyNotFoundException ex)
@@ -90,20 +90,20 @@ public class MileageAlertsController : ControllerBase
     }
 
     [HttpPost("{id}/attend")]
-    public async Task<IActionResult> Attend(int id)
+    public async Task<IActionResult> Attend(int id, CancellationToken cancellationToken)
     {
-        var alert = await _mileageAlertService.AttendAsync(id);
+        var alert = await _mileageAlertService.AttendAsync(id, cancellationToken);
         if (alert is null)
             return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
 
-        await _dashboardNotifier.NotifyAllAsync();
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta atendida exitosamente"));
     }
 
     [HttpPost("{id}/send")]
-    public async Task<IActionResult> SendReminder(int id)
+    public async Task<IActionResult> SendReminder(int id, CancellationToken cancellationToken)
     {
-        var notification = await _notificationService.SendReminderAsync(id);
+        var notification = await _notificationService.SendReminderAsync(id, cancellationToken);
         if (notification is null)
             return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
 

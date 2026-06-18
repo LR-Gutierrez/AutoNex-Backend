@@ -17,9 +17,10 @@ public class InventoryMovementService : IInventoryMovementService
         _context = context;
     }
 
-    public async Task<PagedResponse<InventoryMovementResponse>> GetAllAsync(int? consumableId, int? toolId, int? page, int? pageSize)
+    public async Task<PagedResponse<InventoryMovementResponse>> GetAllAsync(int? consumableId, int? toolId, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.InventoryMovements
+            .AsNoTracking()
             .Include(m => m.Consumable)
             .Include(m => m.Tool)
             .AsQueryable();
@@ -31,15 +32,16 @@ public class InventoryMovementService : IInventoryMovementService
 
         return await query
             .OrderByDescending(m => m.CreatedAt)
-            .ToPagedResponseAsync(page, pageSize, m => m.ToResponse());
+            .ToPagedResponseAsync(page, pageSize, m => m.ToResponse(), cancellationToken);
     }
 
-    public async Task<InventoryMovementResponse?> GetByIdAsync(int id)
+    public async Task<InventoryMovementResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var movement = await _context.InventoryMovements
+            .AsNoTracking()
             .Include(m => m.Consumable)
             .Include(m => m.Tool)
-            .FirstOrDefaultAsync(m => m.Id == id);
+            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
         return movement?.ToResponse();
     }

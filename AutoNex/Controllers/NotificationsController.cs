@@ -20,16 +20,16 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? clientId, [FromQuery] int? vehicleId, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? clientId, [FromQuery] int? vehicleId, [FromQuery] string? status, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var notifications = await _notificationService.GetAllAsync(clientId, vehicleId, status, page, pageSize);
+        var notifications = await _notificationService.GetAllAsync(clientId, vehicleId, status, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<NotificationResponse>>.Ok(notifications));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var notification = await _notificationService.GetByIdAsync(id);
+        var notification = await _notificationService.GetByIdAsync(id, cancellationToken);
         if (notification is null)
             return NotFound(ApiResponse<NotificationResponse>.Fail("Notificación no encontrada"));
 
@@ -37,11 +37,11 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpPost("send-whatsapp")]
-    public async Task<IActionResult> SendWhatsApp([FromBody] SendNotificationRequest request)
+    public async Task<IActionResult> SendWhatsApp([FromBody] SendNotificationRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var notification = await _notificationService.SendAsync(request);
+            var notification = await _notificationService.SendAsync(request, cancellationToken);
             return Ok(ApiResponse<NotificationResponse>.Ok(notification, "Notificación enviada exitosamente"));
         }
         catch (KeyNotFoundException ex)

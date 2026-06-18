@@ -21,9 +21,10 @@ public class FinancialRecordService : IFinancialRecordService
     private static DateTime? ToUtc(DateTime? dt) =>
         dt.HasValue ? (dt.Value.Kind == DateTimeKind.Utc ? dt.Value : dt.Value.ToUniversalTime()) : null;
 
-    public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize)
+    public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.FinancialRecords
+            .AsNoTracking()
             .Include(r => r.User)
             .AsQueryable();
 
@@ -43,21 +44,21 @@ public class FinancialRecordService : IFinancialRecordService
             .OrderByDescending(r => r.Date)
             .ThenByDescending(r => r.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, r => r.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, r => r.ToResponse(), cancellationToken);
     }
 
-    public async Task<FinancialRecordResponse?> GetByIdAsync(int id)
+    public async Task<FinancialRecordResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var record = await _context.FinancialRecords
             .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
         return record?.ToResponse();
     }
 
-    public async Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request, int userId)
+    public async Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request, int userId, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FindAsync(userId)
+        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken)
             ?? throw new KeyNotFoundException("Usuario no encontrado");
 
         var record = new FinancialRecord
@@ -71,16 +72,16 @@ public class FinancialRecordService : IFinancialRecordService
         };
 
         _context.FinancialRecords.Add(record);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return record.ToResponse();
     }
 
-    public async Task<FinancialRecordResponse?> UpdateAsync(int id, UpdateFinancialRecordRequest request)
+    public async Task<FinancialRecordResponse?> UpdateAsync(int id, UpdateFinancialRecordRequest request, CancellationToken cancellationToken = default)
     {
         var record = await _context.FinancialRecords
             .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
         if (record is null) return null;
 
         record.Type = request.Type;
@@ -90,24 +91,24 @@ public class FinancialRecordService : IFinancialRecordService
         record.Date = ToUtc(request.Date) ?? request.Date;
         record.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return record.ToResponse();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var record = await _context.FinancialRecords.FindAsync(id);
+        var record = await _context.FinancialRecords.FindAsync(new object[] { id }, cancellationToken);
         if (record is null) return false;
 
         record.IsDeleted = true;
         record.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<FinancialSummaryResponse> GetSummaryAsync(DateTime? from, DateTime? to)
+    public async Task<FinancialSummaryResponse> GetSummaryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
     {
-        var query = _context.FinancialRecords.AsQueryable();
+        var query = _context.FinancialRecords.AsNoTracking().AsQueryable();
 
         var utcFrom = ToUtc(from);
         var utcTo = ToUtc(to);
@@ -117,10 +118,10 @@ public class FinancialRecordService : IFinancialRecordService
         if (utcTo.HasValue)
             query = query.Where(r => r.Date <= utcTo.Value);
 
-        var incomeSum = await query.Where(r => r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount) ?? 0;
-        var expenseSum = await query.Where(r => r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount) ?? 0;
-        var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync();
-        var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync();
+        var incomeSum = await query.Where(r => r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
+        var expenseSum = await query.Where(r => r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
+        var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync(cancellationToken);
+        var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync(cancellationToken);
 
         return new FinancialSummaryResponse(
             incomeSum,
@@ -131,9 +132,9 @@ public class FinancialRecordService : IFinancialRecordService
         );
     }
 
-    public async Task<List<CategorySummaryResponse>> GetByCategoryAsync(DateTime? from, DateTime? to)
+    public async Task<List<CategorySummaryResponse>> GetByCategoryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
     {
-        var query = _context.FinancialRecords.AsQueryable();
+        var query = _context.FinancialRecords.AsNoTracking().AsQueryable();
 
         var utcFrom = ToUtc(from);
         var utcTo = ToUtc(to);
@@ -152,7 +153,7 @@ public class FinancialRecordService : IFinancialRecordService
                 Count = g.Count()
             })
             .OrderByDescending(g => g.TotalAmount)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return grouped.Select(g => new CategorySummaryResponse(
             g.Category.ToString(),

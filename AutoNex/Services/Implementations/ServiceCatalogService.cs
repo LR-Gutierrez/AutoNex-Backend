@@ -16,22 +16,23 @@ public class ServiceCatalogService : IServiceCatalogService
         _context = context;
     }
 
-    public async Task<PagedResponse<ServiceResponse>> GetAllAsync(int? page, int? pageSize)
+    public async Task<PagedResponse<ServiceResponse>> GetAllAsync(int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Services
+            .AsNoTracking()
             .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
 
-        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken);
     }
 
-    public async Task<ServiceResponse?> GetByIdAsync(int id)
+    public async Task<ServiceResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(id);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
         return service?.ToResponse();
     }
 
-    public async Task<ServiceResponse> CreateAsync(CreateServiceRequest request)
+    public async Task<ServiceResponse> CreateAsync(CreateServiceRequest request, CancellationToken cancellationToken = default)
     {
         var service = new Models.Service
         {
@@ -44,14 +45,14 @@ public class ServiceCatalogService : IServiceCatalogService
         };
 
         _context.Services.Add(service);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return service.ToResponse();
     }
 
-    public async Task<ServiceResponse?> UpdateAsync(int id, UpdateServiceRequest request)
+    public async Task<ServiceResponse?> UpdateAsync(int id, UpdateServiceRequest request, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(id);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
         if (service is null) return null;
 
         service.Name = request.Name;
@@ -62,18 +63,18 @@ public class ServiceCatalogService : IServiceCatalogService
         service.RecommendedMonths = request.RecommendedMonths;
         service.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return service.ToResponse();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var service = await _context.Services.FindAsync(id);
+        var service = await _context.Services.FindAsync(new object[] { id }, cancellationToken);
         if (service is null) return false;
 
         service.IsDeleted = true;
         service.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

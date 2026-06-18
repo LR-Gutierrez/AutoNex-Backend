@@ -21,9 +21,10 @@ public class DashboardController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetDashboard(
         [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate)
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
     {
-        var dashboard = await _dashboardService.GetDashboardAsync(startDate, endDate);
+        var dashboard = await _dashboardService.GetDashboardAsync(startDate, endDate, cancellationToken);
         return Ok(ApiResponse<DashboardResponse>.Ok(dashboard, "Dashboard cargado correctamente"));
     }
 }

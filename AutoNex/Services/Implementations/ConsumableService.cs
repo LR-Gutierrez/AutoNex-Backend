@@ -18,9 +18,10 @@ public class ConsumableService : IConsumableService
         _context = context;
     }
 
-    public async Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? category, int? page, int? pageSize)
+    public async Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Consumables
+            .AsNoTracking()
             .Include(c => c.Supplier)
             .AsQueryable();
 
@@ -29,30 +30,32 @@ public class ConsumableService : IConsumableService
 
         query = query.OrderByDescending(c => c.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken);
     }
 
-    public async Task<List<ConsumableResponse>> GetLowStockAsync()
+    public async Task<List<ConsumableResponse>> GetLowStockAsync(CancellationToken cancellationToken = default)
     {
         var items = await _context.Consumables
+            .AsNoTracking()
             .Include(c => c.Supplier)
             .Where(c => c.StockQuantity <= c.MinStock)
             .OrderBy(c => c.StockQuantity)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return items.Select(c => c.ToResponse()).ToList();
     }
 
-    public async Task<ConsumableResponse?> GetByIdAsync(int id)
+    public async Task<ConsumableResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var consumable = await _context.Consumables
+            .AsNoTracking()
             .Include(c => c.Supplier)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         return consumable?.ToResponse();
     }
 
-    public async Task<ConsumableResponse> CreateAsync(CreateConsumableRequest request)
+    public async Task<ConsumableResponse> CreateAsync(CreateConsumableRequest request, CancellationToken cancellationToken = default)
     {
         var consumable = new Consumable
         {
@@ -65,14 +68,14 @@ public class ConsumableService : IConsumableService
         };
 
         _context.Consumables.Add(consumable);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(consumable.Id))!;
+        return (await GetByIdAsync(consumable.Id, cancellationToken))!;
     }
 
-    public async Task<ConsumableResponse?> UpdateAsync(int id, UpdateConsumableRequest request)
+    public async Task<ConsumableResponse?> UpdateAsync(int id, UpdateConsumableRequest request, CancellationToken cancellationToken = default)
     {
-        var consumable = await _context.Consumables.FindAsync(id);
+        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken);
         if (consumable is null) return null;
 
         consumable.Name = request.Name;
@@ -83,18 +86,18 @@ public class ConsumableService : IConsumableService
         consumable.SupplierId = request.SupplierId;
         consumable.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return (await GetByIdAsync(id))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var consumable = await _context.Consumables.FindAsync(id);
+        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken);
         if (consumable is null) return false;
 
         consumable.IsDeleted = true;
         consumable.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

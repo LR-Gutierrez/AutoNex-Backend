@@ -13,16 +13,19 @@ public class ServiceOrderService : IServiceOrderService
 {
     private readonly AppDbContext _context;
     private readonly IMileageAlertService _mileageAlertService;
+    private readonly ILogger<ServiceOrderService> _logger;
 
-    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService)
+    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService, ILogger<ServiceOrderService> logger)
     {
         _context = context;
         _mileageAlertService = mileageAlertService;
+        _logger = logger;
     }
 
-    public async Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize)
+    public async Task<PagedResponse<ServiceOrderResponse>> GetAllAsync(DateTime? from, DateTime? to, int? clientId, int? vehicleId, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.ServiceOrders
+            .AsNoTracking()
             .Include(o => o.Client)
             .Include(o => o.Vehicle)
             .Include(o => o.User)
@@ -44,12 +47,13 @@ public class ServiceOrderService : IServiceOrderService
             .Where(o => !o.Client.IsDeleted)
             .OrderByDescending(o => o.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, MapToResponse);
+        return await query.ToPagedResponseAsync(page, pageSize, MapToResponse, cancellationToken);
     }
 
-    public async Task<ServiceOrderResponse?> GetByIdAsync(int id)
+    public async Task<ServiceOrderResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var order = await _context.ServiceOrders
+            .AsNoTracking()
             .Include(o => o.Client)
             .Include(o => o.Vehicle)
             .Include(o => o.User)
@@ -57,16 +61,16 @@ public class ServiceOrderService : IServiceOrderService
                 .ThenInclude(i => i.Service)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Consumable)
-            .FirstOrDefaultAsync(o => o.Id == id);
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         return order is null ? null : MapToResponse(order);
     }
 
-    public async Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId)
+    public async Task<ServiceOrderResponse> CreateAsync(CreateServiceOrderRequest request, int userId, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(request.VehicleId)
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken)
             ?? throw new KeyNotFoundException("Vehículo no encontrado");
-        var client = await _context.Clients.FindAsync(request.ClientId)
+        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
         var order = new ServiceOrder
@@ -89,13 +93,13 @@ public class ServiceOrderService : IServiceOrderService
                 if (!itemReq.ServiceId.HasValue)
                     throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
 
-                var service = await _context.Services.FindAsync(itemReq.ServiceId.Value)
+                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken)
                     ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
             }
 
             if (itemReq.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(itemReq.ConsumableId.Value)
+                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken)
                     ?? throw new KeyNotFoundException($"Consumible {itemReq.ConsumableId} no encontrado");
 
                 if (consumable.StockQuantity < itemReq.Quantity)
@@ -120,28 +124,28 @@ public class ServiceOrderService : IServiceOrderService
         order.TotalAmount = total;
 
         _context.ServiceOrders.Add(order);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
         {
             try
             {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id);
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
             }
-            catch
+            catch (Exception ex)
             {
-                // Do not block order creation if alert setup fails
+                _logger.LogWarning(ex, "Error al crear/actualizar alerta de kilometraje para orden {OrderId}", order.Id);
             }
         }
 
-        return (await GetByIdAsync(order.Id))!;
+        return (await GetByIdAsync(order.Id, cancellationToken))!;
     }
 
-    public async Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request)
+    public async Task<ServiceOrderResponse?> UpdateAsync(int id, UpdateServiceOrderRequest request, CancellationToken cancellationToken = default)
     {
         var order = await _context.ServiceOrders
             .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == id);
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         if (order is null) return null;
 
@@ -153,7 +157,7 @@ public class ServiceOrderService : IServiceOrderService
         {
             if (oldItem.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(oldItem.ConsumableId.Value);
+                var consumable = await _context.Consumables.FindAsync(new object[] { oldItem.ConsumableId.Value }, cancellationToken);
                 if (consumable is not null)
                 {
                     consumable.StockQuantity += oldItem.Quantity;
@@ -178,13 +182,13 @@ public class ServiceOrderService : IServiceOrderService
                 if (!itemReq.ServiceId.HasValue)
                     throw new InvalidOperationException("ServiceId es obligatorio para items de tipo Service");
 
-                var service = await _context.Services.FindAsync(itemReq.ServiceId.Value)
+                var service = await _context.Services.FindAsync(new object[] { itemReq.ServiceId.Value }, cancellationToken)
                     ?? throw new KeyNotFoundException($"Servicio {itemReq.ServiceId} no encontrado");
             }
 
             if (itemReq.ConsumableId.HasValue)
             {
-                var consumable = await _context.Consumables.FindAsync(itemReq.ConsumableId.Value)
+                var consumable = await _context.Consumables.FindAsync(new object[] { itemReq.ConsumableId.Value }, cancellationToken)
                     ?? throw new KeyNotFoundException($"Consumible {itemReq.ConsumableId} no encontrado");
 
                 if (consumable.StockQuantity < itemReq.Quantity)
@@ -209,28 +213,28 @@ public class ServiceOrderService : IServiceOrderService
         order.TotalAmount = total;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
         {
             try
             {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id);
+                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken);
             }
-            catch
+            catch (Exception ex)
             {
-                // Do not block order update if alert setup fails
+                _logger.LogWarning(ex, "Error al crear/actualizar alerta de kilometraje para orden {OrderId}", order.Id);
             }
         }
 
-        return (await GetByIdAsync(id))!;
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request)
+    public async Task<ServiceOrderResponse?> UpdateStatusAsync(int id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default)
     {
         var order = await _context.ServiceOrders
             .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == id);
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
         if (order is null) return null;
 
         if (order.Status == ServiceOrderStatus.Completed || order.Status == ServiceOrderStatus.Cancelled)
@@ -241,7 +245,7 @@ public class ServiceOrderService : IServiceOrderService
             foreach (var item in order.Items.Where(i => i.ConsumableId.HasValue))
             {
                 var consumableId = item.ConsumableId.GetValueOrDefault();
-                var consumable = await _context.Consumables.FindAsync(consumableId);
+                var consumable = await _context.Consumables.FindAsync(new object[] { consumableId }, cancellationToken);
                 if (consumable is not null)
                 {
                     consumable.StockQuantity += item.Quantity;
@@ -253,8 +257,8 @@ public class ServiceOrderService : IServiceOrderService
         order.Status = request.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return (await GetByIdAsync(id))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
     private static ServiceOrderResponse MapToResponse(ServiceOrder order)

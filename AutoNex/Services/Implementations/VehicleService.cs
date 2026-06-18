@@ -17,9 +17,10 @@ public class VehicleService : IVehicleService
         _context = context;
     }
 
-    public async Task<PagedResponse<VehicleResponse>> GetAllAsync(string? search, int? page, int? pageSize)
+    public async Task<PagedResponse<VehicleResponse>> GetAllAsync(string? search, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Vehicles
+            .AsNoTracking()
             .Include(v => v.Client)
             .Where(v => !v.Client.IsDeleted)
             .AsQueryable();
@@ -31,18 +32,20 @@ public class VehicleService : IVehicleService
 
         query = query.OrderByDescending(v => v.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, v => v.ToResponse());
+        return await query.ToPagedResponseAsync(page, pageSize, v => v.ToResponse(), cancellationToken);
     }
 
-    public async Task<VehicleResponse?> GetByIdAsync(int id)
+    public async Task<VehicleResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var vehicle = await _context.Vehicles
+            .AsNoTracking()
             .Include(v => v.Client)
-            .FirstOrDefaultAsync(v => v.Id == id);
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
         if (vehicle is null) return null;
 
         var orders = await _context.ServiceOrders
+            .AsNoTracking()
             .Where(o => o.VehicleId == id && !o.IsDeleted)
             .OrderByDescending(o => o.Date)
             .Select(o => new ServiceOrderBriefResponse(
@@ -52,14 +55,14 @@ public class VehicleService : IVehicleService
                 o.TotalAmount,
                 o.CurrentKm
             ))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return vehicle.ToResponse(orders);
     }
 
-    public async Task<VehicleResponse> CreateAsync(CreateVehicleRequest request)
+    public async Task<VehicleResponse> CreateAsync(CreateVehicleRequest request, CancellationToken cancellationToken = default)
     {
-        var clientExists = await _context.Clients.AnyAsync(c => c.Id == request.ClientId);
+        var clientExists = await _context.Clients.AnyAsync(c => c.Id == request.ClientId, cancellationToken);
         if (!clientExists)
             throw new KeyNotFoundException("El cliente no existe");
 
@@ -74,14 +77,14 @@ public class VehicleService : IVehicleService
         };
 
         _context.Vehicles.Add(vehicle);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(vehicle.Id))!;
+        return (await GetByIdAsync(vehicle.Id, cancellationToken))!;
     }
 
-    public async Task<VehicleResponse?> UpdateAsync(int id, UpdateVehicleRequest request)
+    public async Task<VehicleResponse?> UpdateAsync(int id, UpdateVehicleRequest request, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(id);
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken);
         if (vehicle is null) return null;
 
         vehicle.Brand = request.Brand;
@@ -91,13 +94,13 @@ public class VehicleService : IVehicleService
         vehicle.VIN = request.VIN;
         vehicle.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return (await GetByIdAsync(id))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(id);
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken);
         if (vehicle is null) return false;
 
         vehicle.IsDeleted = true;
@@ -105,7 +108,7 @@ public class VehicleService : IVehicleService
 
         var alerts = await _context.MileageAlerts
             .Where(a => a.VehicleId == id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var alert in alerts)
         {
@@ -113,7 +116,7 @@ public class VehicleService : IVehicleService
             alert.UpdatedAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

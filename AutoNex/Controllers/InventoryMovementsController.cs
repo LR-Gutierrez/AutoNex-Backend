@@ -20,16 +20,16 @@ public class InventoryMovementsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? consumableId, [FromQuery] int? toolId, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? consumableId, [FromQuery] int? toolId, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var movements = await _inventoryMovementService.GetAllAsync(consumableId, toolId, page, pageSize);
+        var movements = await _inventoryMovementService.GetAllAsync(consumableId, toolId, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<InventoryMovementResponse>>.Ok(movements));
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
-        var movement = await _inventoryMovementService.GetByIdAsync(id);
+        var movement = await _inventoryMovementService.GetByIdAsync(id, cancellationToken);
         if (movement is null)
             return NotFound(ApiResponse<InventoryMovementResponse>.Fail("Movimiento no encontrado"));
 
