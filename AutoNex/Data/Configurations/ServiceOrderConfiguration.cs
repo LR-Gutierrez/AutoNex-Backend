@@ -46,7 +46,8 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             .HasMaxLength(100);
 
         builder.Property(o => o.OperationDate)
-            .HasColumnName("operation_date");
+            .HasColumnName("operation_date")
+            .HasColumnType("date");
 
         builder.Property(o => o.IsDeleted).HasColumnName("is_deleted");
         builder.Property(o => o.CreatedAt).HasColumnName("created_at");

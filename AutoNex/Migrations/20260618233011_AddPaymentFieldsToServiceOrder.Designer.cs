@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutoNex.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260618232822_AddPaymentFieldsToServiceOrder")]
+    [Migration("20260618233011_AddPaymentFieldsToServiceOrder")]
     partial class AddPaymentFieldsToServiceOrder
     {
         /// <inheritdoc />
@@ -452,7 +452,7 @@ namespace AutoNex.Migrations
                         .HasColumnName("notes");
 
                     b.Property<DateTime?>("OperationDate")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("date")
                         .HasColumnName("operation_date");
 
                     b.Property<string>("OperationNumber")

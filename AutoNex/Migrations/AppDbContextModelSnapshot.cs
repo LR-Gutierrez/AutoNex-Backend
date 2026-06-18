@@ -449,7 +449,7 @@ namespace AutoNex.Migrations
                         .HasColumnName("notes");
 
                     b.Property<DateTime?>("OperationDate")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("date")
                         .HasColumnName("operation_date");
 
                     b.Property<string>("OperationNumber")

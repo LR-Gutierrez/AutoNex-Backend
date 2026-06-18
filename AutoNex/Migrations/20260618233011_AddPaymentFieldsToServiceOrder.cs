@@ -14,7 +14,7 @@ namespace AutoNex.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "operation_date",
                 table: "service_orders",
-                type: "timestamp with time zone",
+                type: "date",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
