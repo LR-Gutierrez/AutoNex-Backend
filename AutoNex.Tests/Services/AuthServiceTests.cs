@@ -1,33 +1,30 @@
 using AutoNex.DTOs.Auth;
 using AutoNex.Enums;
+using AutoNex.Helpers;
 using AutoNex.Services.Implementations;
 using AutoNex.Tests.Helpers;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace AutoNex.Tests.Services;
 
 public class AuthServiceTests
 {
-    private static IConfiguration CreateConfig()
+    private static IOptions<JwtSettings> CreateJwtOptions()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Key"] = "TestKeyThatIsAtLeast32CharactersLong!",
-                ["Jwt:Issuer"] = "TestIssuer",
-                ["Jwt:Audience"] = "TestAudience",
-                ["Jwt:ExpireMinutes"] = "60"
-            })
-            .Build();
-
-        return config;
+        return Options.Create(new JwtSettings
+        {
+            Key = "TestKeyThatIsAtLeast32CharactersLong!",
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            ExpireMinutes = 60
+        });
     }
 
     [Fact]
     public async Task RegisterAsync_WithNewEmail_CreatesUser()
     {
         var context = TestDbContextFactory.Create();
-        var service = new AuthService(context, CreateConfig());
+        var service = new AuthService(context, CreateJwtOptions());
 
         var request = new RegisterRequest
         {
@@ -49,7 +46,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_WithDuplicateEmail_ThrowsInvalidOperationException()
     {
         var context = TestDbContextFactory.Create();
-        var service = new AuthService(context, CreateConfig());
+        var service = new AuthService(context, CreateJwtOptions());
 
         var request = new RegisterRequest
         {
@@ -69,7 +66,7 @@ public class AuthServiceTests
     public async Task LoginAsync_WithValidCredentials_ReturnsToken()
     {
         var context = TestDbContextFactory.Create();
-        var service = new AuthService(context, CreateConfig());
+        var service = new AuthService(context, CreateJwtOptions());
 
         var registerRequest = new RegisterRequest
         {
@@ -93,7 +90,7 @@ public class AuthServiceTests
     public async Task LoginAsync_WithInvalidPassword_ThrowsUnauthorizedAccessException()
     {
         var context = TestDbContextFactory.Create();
-        var service = new AuthService(context, CreateConfig());
+        var service = new AuthService(context, CreateJwtOptions());
 
         var registerRequest = new RegisterRequest
         {
@@ -115,7 +112,7 @@ public class AuthServiceTests
     public async Task LoginAsync_WithNonExistentEmail_ThrowsUnauthorizedAccessException()
     {
         var context = TestDbContextFactory.Create();
-        var service = new AuthService(context, CreateConfig());
+        var service = new AuthService(context, CreateJwtOptions());
 
         var request = new LoginRequest("nonexistent@example.com", "Test123");
 
