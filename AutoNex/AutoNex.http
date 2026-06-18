@@ -1,6 +1,19 @@
 @AutoNex_HostAddress = http://localhost:5212
 
-GET {{AutoNex_HostAddress}}/weatherforecast/
+GET {{AutoNex_HostAddress}}/health
 Accept: application/json
 
 ###
+
+GET {{AutoNex_HostAddress}}/api/dashboard
+Authorization: Bearer {{token}}
+
+###
+
+POST {{AutoNex_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@autonex.com",
+  "password": "Admin123"
+}
