@@ -79,7 +79,7 @@ public class NotificationService : INotificationService
 
         if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
         {
-            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message);
+            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken);
             notification.Status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
             notification.SentAt = sent ? DateTime.UtcNow : null;
         }
@@ -93,7 +93,7 @@ public class NotificationService : INotificationService
 
         var response = (await GetByIdAsync(notification.Id, cancellationToken))!;
 
-        await _hubContext.Clients.Group("all").SendAsync("NewNotification", response, cancellationToken);
+        await _hubContext.Clients.Group("all").SendAsync("newNotification", response, cancellationToken);
 
         return response;
     }

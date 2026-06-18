@@ -99,6 +99,53 @@ public class DashboardService : IDashboardService
         );
     }
 
+    public async Task<Dictionary<string, DashboardResponse>> GetMultiPeriodDashboardAsync(
+        Dictionary<string, (DateTime start, DateTime end)> periods,
+        CancellationToken cancellationToken = default)
+    {
+        var minStart = periods.Values.Min(p => p.start);
+        var maxEnd = periods.Values.Max(p => p.end);
+
+        var allOrders = await _context.ServiceOrders
+            .AsNoTracking()
+            .Where(o => o.Date >= minStart && o.Date < maxEnd && !o.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        var allFinancialRecords = await _context.FinancialRecords
+            .AsNoTracking()
+            .Where(r => r.Date >= minStart && r.Date < maxEnd)
+            .ToListAsync(cancellationToken);
+
+        var lowStock = await GetLowStockSummaryAsync(cancellationToken);
+        var alerts = await GetAlertsSummaryAsync(cancellationToken);
+
+        var result = new Dictionary<string, DashboardResponse>(periods.Count);
+        foreach (var (name, (start, end)) in periods)
+        {
+            var periodOrders = allOrders.Where(o => o.Date >= start && o.Date < end).ToList();
+            var ordersSummary = new OrdersSummary(
+                periodOrders.Count,
+                periodOrders.Count(o => o.Status == ServiceOrderStatus.Open),
+                periodOrders.Count(o => o.Status == ServiceOrderStatus.InProgress),
+                periodOrders.Count(o => o.Status == ServiceOrderStatus.Completed),
+                periodOrders.Where(o => o.Status == ServiceOrderStatus.Completed).Sum(o => o.TotalAmount)
+            );
+
+            var periodRecords = allFinancialRecords.Where(r => r.Date >= start && r.Date < end).ToList();
+            var income = periodRecords.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
+            var expenses = periodRecords.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+            var financialSummary = new FinancialSummaryResponse(
+                income, expenses, income - expenses,
+                periodRecords.Count(r => r.Type == FinancialRecordType.Income),
+                periodRecords.Count(r => r.Type == FinancialRecordType.Expense)
+            );
+
+            result[name] = new DashboardResponse(ordersSummary, lowStock, alerts, financialSummary);
+        }
+
+        return result;
+    }
+
     private static DateTime? ToUtc(DateTime? dt) =>
         dt.HasValue ? (dt.Value.Kind == DateTimeKind.Utc ? dt.Value : dt.Value.ToUniversalTime()) : null;
 }

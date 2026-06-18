@@ -70,6 +70,7 @@ public class FinancialRecordsController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Registro financiero no encontrado"));
 
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return NoContent();
     }
 

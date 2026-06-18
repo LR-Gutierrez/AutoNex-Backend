@@ -60,6 +60,7 @@ public class MileageAlertsController : ControllerBase
         if (alert is null)
             return NotFound(ApiResponse<MileageAlertResponse>.Fail("Alerta no encontrada"));
 
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return Ok(ApiResponse<MileageAlertResponse>.Ok(alert, "Alerta actualizada exitosamente"));
     }
 
@@ -70,6 +71,7 @@ public class MileageAlertsController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Alerta no encontrada"));
 
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return NoContent();
     }
 

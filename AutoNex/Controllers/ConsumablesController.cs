@@ -75,6 +75,7 @@ public class ConsumablesController : ControllerBase
         if (!deleted)
             return NotFound(ApiResponse<object>.Fail("Consumible no encontrado"));
 
+        await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return NoContent();
     }
 }
