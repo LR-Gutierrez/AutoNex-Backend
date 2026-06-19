@@ -7,7 +7,6 @@ using AutoNex.Helpers;
 using AutoNex.Models;
 using AutoNex.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AutoNex.Services.Implementations;
@@ -15,12 +14,12 @@ namespace AutoNex.Services.Implementations;
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
-    private readonly JwtSettings _jwtSettings;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(AppDbContext context, IOptions<JwtSettings> jwtSettings)
+    public AuthService(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
-        _jwtSettings = jwtSettings.Value;
+        _configuration = configuration;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -73,7 +72,8 @@ public class AuthService : IAuthService
 
     private string GenerateToken(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var jwtSettings = _configuration.GetSection("Jwt");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -84,10 +84,10 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
+            issuer: jwtSettings["Issuer"],
+            audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpireMinutes),
+            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]!)),
             signingCredentials: credentials
         );
 

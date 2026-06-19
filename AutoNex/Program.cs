@@ -102,7 +102,6 @@ builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
 builder.Services.AddControllers()
