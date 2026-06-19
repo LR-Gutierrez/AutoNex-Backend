@@ -157,18 +157,7 @@ public class MileageAlertService : IMileageAlertService
         if (serviceItems.Count == 0)
             return [];
 
-        var serviceIds = serviceItems.Select(i => i.Service!.Id).ToList();
-        var existingAlerts = await _context.MileageAlerts
-            .Where(a => a.VehicleId == order.VehicleId && serviceIds.Contains(a.ServiceId) && a.IsActive)
-            .ToListAsync(cancellationToken);
-
-        var previousOrder = await _context.ServiceOrders
-            .AsNoTracking()
-            .Where(o => o.VehicleId == order.VehicleId
-                && o.Status == Enums.ServiceOrderStatus.Completed
-                && o.Id != order.Id)
-            .OrderByDescending(o => o.Date)
-            .FirstOrDefaultAsync(cancellationToken);
+        var results = new List<MileageAlertResponse>();
 
         foreach (var item in serviceItems)
         {
@@ -180,7 +169,8 @@ public class MileageAlertService : IMileageAlertService
             if (service.RecommendedMonths is not null)
                 nextAlertDate = order.Date.AddMonths(service.RecommendedMonths.Value);
 
-            var alert = existingAlerts.FirstOrDefault(a => a.ServiceId == service.Id);
+            var alert = await _context.MileageAlerts
+                .FirstOrDefaultAsync(a => a.VehicleId == order.VehicleId && a.ServiceId == service.Id && a.IsActive, cancellationToken);
 
             if (alert is null)
             {
@@ -197,6 +187,14 @@ public class MileageAlertService : IMileageAlertService
             }
             else
             {
+                var previousOrder = await _context.ServiceOrders
+                    .AsNoTracking()
+                    .Where(o => o.VehicleId == order.VehicleId
+                        && o.Status == Enums.ServiceOrderStatus.Completed
+                        && o.Id != order.Id)
+                    .OrderByDescending(o => o.Date)
+                    .FirstOrDefaultAsync(cancellationToken);
+
                 if (previousOrder is not null && previousOrder.CurrentKm > 0 && previousOrder.CurrentKm != currentKm)
                 {
                     var kmDiff = currentKm - previousOrder.CurrentKm;
@@ -215,23 +213,15 @@ public class MileageAlertService : IMileageAlertService
                 alert.NextAlertDate = nextAlertDate ?? alert.NextAlertDate;
                 alert.UpdatedAt = DateTime.UtcNow;
             }
+
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            var response = await GetByIdAsync(alert.Id, cancellationToken).ConfigureAwait(false);
+            if (response is not null)
+                results.Add(response);
         }
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-
-        var updatedAlerts = await _context.MileageAlerts
-            .AsNoTracking()
-            .Include(a => a.Vehicle)
-            .Include(a => a.Service)
-            .Where(a => a.VehicleId == order.VehicleId && serviceIds.Contains(a.ServiceId))
-            .ToListAsync(cancellationToken);
-
-        var vehicleIds = updatedAlerts.Select(a => a.VehicleId).ToList();
-        var latestKms = await GetLatestKmBatchAsync(vehicleIds, cancellationToken).ConfigureAwait(false);
-
-        return updatedAlerts
-            .Select(a => a.ToResponse(latestKms.GetValueOrDefault(a.VehicleId, 0)))
-            .ToList();
+        return results;
     }
 
     private async Task<int> GetLatestKmAsync(int vehicleId, CancellationToken cancellationToken = default)
