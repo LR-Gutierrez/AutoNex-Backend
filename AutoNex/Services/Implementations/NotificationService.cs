@@ -101,7 +101,6 @@ public class NotificationService : INotificationService
     public async Task<NotificationResponse?> SendReminderAsync(int alertId, CancellationToken cancellationToken = default)
     {
         var alert = await _context.MileageAlerts
-            .AsNoTracking()
             .Include(a => a.Vehicle)
                 .ThenInclude(v => v.Client)
             .FirstOrDefaultAsync(a => a.Id == alertId, cancellationToken);
@@ -114,7 +113,6 @@ public class NotificationService : INotificationService
             throw new InvalidOperationException("El cliente no tiene teléfono registrado");
 
         var currentKm = await _context.ServiceOrders
-            .AsNoTracking()
             .Where(o => o.VehicleId == alert.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
             .OrderByDescending(o => o.Date)
             .Select(o => (int?)o.CurrentKm)

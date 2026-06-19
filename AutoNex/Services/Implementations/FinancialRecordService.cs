@@ -50,7 +50,6 @@ public class FinancialRecordService : IFinancialRecordService
     public async Task<FinancialRecordResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var record = await _context.FinancialRecords
-            .AsNoTracking()
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 

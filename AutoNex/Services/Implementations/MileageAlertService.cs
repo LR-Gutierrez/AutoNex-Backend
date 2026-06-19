@@ -83,7 +83,6 @@ public class MileageAlertService : IMileageAlertService
             ?? throw new KeyNotFoundException("Servicio no encontrado");
 
         var existing = await _context.MileageAlerts
-            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.VehicleId == request.VehicleId && a.ServiceId == request.ServiceId, cancellationToken);
 
         if (existing is not null)
@@ -188,7 +187,6 @@ public class MileageAlertService : IMileageAlertService
             else
             {
                 var previousOrder = await _context.ServiceOrders
-                    .AsNoTracking()
                     .Where(o => o.VehicleId == order.VehicleId
                         && o.Status == Enums.ServiceOrderStatus.Completed
                         && o.Id != order.Id)
