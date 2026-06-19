@@ -53,7 +53,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken).ConfigureAwait(false)
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken).ConfigureAwait(false)
             ?? throw new UnauthorizedAccessException("Credenciales inválidas");
 
         if (!user.IsActive)
