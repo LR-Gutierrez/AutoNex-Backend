@@ -155,7 +155,7 @@ using (var scope = app.Services.CreateScope())
             IsActive = true
         };
         context.Users.Add(admin);
-        await context.SaveChangesAsync();
+        context.SaveChanges();
     }
 }
 
