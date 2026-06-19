@@ -56,6 +56,60 @@ public class ExchangeRatesController : ControllerBase
         return Ok(newsletter.ToDto());
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, CreateNewsletterRequest request)
+    {
+        var newsletter = await _db.CurrencyNewsletters
+            .Include(n => n.ExchangeRates)
+            .FirstOrDefaultAsync(n => n.Id == id);
+
+        if (newsletter == null) return NotFound();
+
+        newsletter.PublishedAt = request.PublishedAt;
+        newsletter.ValueDate = request.ValueDate;
+        newsletter.Observations = request.Observations;
+        newsletter.UpdatedAt = DateTime.UtcNow;
+
+        _db.ExchangeRates.RemoveRange(newsletter.ExchangeRates);
+
+        var newRates = new List<Models.ExchangeRate>();
+        foreach (var rate in request.Rates)
+        {
+            var er = new Models.ExchangeRate
+            {
+                Value = rate.Value,
+                CurrencyId = rate.CurrencyId,
+                CurrencyNewsletterId = newsletter.Id,
+                CreatedBy = newsletter.CreatedBy,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1"
+            };
+            newRates.Add(er);
+            _db.ExchangeRates.Add(er);
+        }
+
+        await _db.SaveChangesAsync();
+
+        var currencies = await _db.Currencies.AsNoTracking().ToListAsync();
+        var dtoRates = newRates.Select(r => new ExchangeRateDto
+        {
+            Id = r.Id,
+            Value = r.Value,
+            CurrencyCode = currencies.First(c => c.Id == r.CurrencyId).IsoCode,
+            CurrencyName = currencies.First(c => c.Id == r.CurrencyId).Name,
+            CurrencySymbol = currencies.First(c => c.Id == r.CurrencyId).Symbol
+        }).ToList();
+
+        return Ok(new NewsletterDto
+        {
+            Id = newsletter.Id,
+            PublishedAt = newsletter.PublishedAt,
+            ValueDate = newsletter.ValueDate,
+            Observations = newsletter.Observations,
+            Status = newsletter.Status,
+            ExchangeRates = dtoRates
+        });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(CreateNewsletterRequest request)
     {
