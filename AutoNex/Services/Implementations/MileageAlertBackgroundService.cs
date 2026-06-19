@@ -23,14 +23,14 @@ public class MileageAlertBackgroundService : BackgroundService
         {
             try
             {
-                await ProcessDueAlertsAsync(stoppingToken);
+                await ProcessDueAlertsAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al procesar alertas de kilometraje");
             }
 
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken).ConfigureAwait(false);
         }
     }
 
@@ -55,7 +55,7 @@ public class MileageAlertBackgroundService : BackgroundService
         {
             try
             {
-                await notificationService.SendReminderAsync(alert.Id);
+                await notificationService.SendReminderAsync(alert.Id).ConfigureAwait(false);
                 alert.LastAlertDate = DateTime.UtcNow;
                 alert.UpdatedAt = DateTime.UtcNow;
                 _logger.LogInformation("Recordatorio enviado para alerta {AlertId} (vehículo {VehicleId})", alert.Id, alert.VehicleId);
@@ -66,6 +66,6 @@ public class MileageAlertBackgroundService : BackgroundService
             }
         }
 
-        await context.SaveChangesAsync(stoppingToken);
+        await context.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
     }
 }

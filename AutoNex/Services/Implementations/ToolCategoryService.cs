@@ -24,12 +24,12 @@ public class ToolCategoryService : IToolCategoryService
             .OrderByDescending(tc => tc.CreatedAt)
             .AsQueryable();
 
-        return await query.ToPagedResponseAsync(page, pageSize, tc => tc.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, tc => tc.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ToolCategoryResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken);
+        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         return category?.ToResponse();
     }
 
@@ -41,31 +41,31 @@ public class ToolCategoryService : IToolCategoryService
         };
 
         _context.ToolCategories.Add(category);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return category.ToResponse();
     }
 
     public async Task<ToolCategoryResponse?> UpdateAsync(int id, UpdateToolCategoryRequest request, CancellationToken cancellationToken = default)
     {
-        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken);
+        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (category is null) return null;
 
         category.Name = request.Name;
         category.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return category.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken);
+        var category = await _context.ToolCategories.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (category is null) return false;
 
         category.IsDeleted = true;
         category.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

@@ -7,6 +7,7 @@ using AutoNex.Helpers;
 using AutoNex.Models;
 using AutoNex.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AutoNex.Services.Implementations;
@@ -14,19 +15,19 @@ namespace AutoNex.Services.Implementations;
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly JwtSettings _jwtSettings;
 
-    public AuthService(AppDbContext context, IConfiguration configuration)
+    public AuthService(AppDbContext context, IOptions<JwtSettings> jwtSettings)
     {
         _context = context;
-        _configuration = configuration;
+        _jwtSettings = jwtSettings.Value;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = request.Email.ToLowerInvariant().Trim();
 
-        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken))
+        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException("El email ya está registrado");
 
         var user = new User
@@ -39,7 +40,7 @@ public class AuthService : IAuthService
         };
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return new AuthResponse(
             user.Id,
@@ -52,7 +53,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken)
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken).ConfigureAwait(false)
             ?? throw new UnauthorizedAccessException("Credenciales inválidas");
 
         if (!user.IsActive)
@@ -72,8 +73,7 @@ public class AuthService : IAuthService
 
     private string GenerateToken(User user)
     {
-        var jwtSettings = _configuration.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
@@ -90,10 +90,10 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]!)),
+            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpireMinutes),
             signingCredentials: credentials
         );
 

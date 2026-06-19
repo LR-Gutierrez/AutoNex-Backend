@@ -32,7 +32,7 @@ public class VehicleService : IVehicleService
 
         query = query.OrderByDescending(v => v.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, v => v.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, v => v.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<VehicleResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -62,7 +62,7 @@ public class VehicleService : IVehicleService
 
     public async Task<VehicleResponse> CreateAsync(CreateVehicleRequest request, CancellationToken cancellationToken = default)
     {
-        var clientExists = await _context.Clients.AnyAsync(c => c.Id == request.ClientId, cancellationToken);
+        var clientExists = await _context.Clients.AnyAsync(c => c.Id == request.ClientId, cancellationToken).ConfigureAwait(false);
         if (!clientExists)
             throw new KeyNotFoundException("El cliente no existe");
 
@@ -77,14 +77,14 @@ public class VehicleService : IVehicleService
         };
 
         _context.Vehicles.Add(vehicle);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return (await GetByIdAsync(vehicle.Id, cancellationToken))!;
+        return (await GetByIdAsync(vehicle.Id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<VehicleResponse?> UpdateAsync(int id, UpdateVehicleRequest request, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken);
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (vehicle is null) return null;
 
         vehicle.Brand = request.Brand;
@@ -94,13 +94,13 @@ public class VehicleService : IVehicleService
         vehicle.VIN = request.VIN;
         vehicle.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
-        return (await GetByIdAsync(id, cancellationToken))!;
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken);
+        var vehicle = await _context.Vehicles.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (vehicle is null) return false;
 
         vehicle.IsDeleted = true;
@@ -116,7 +116,7 @@ public class VehicleService : IVehicleService
             alert.UpdatedAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

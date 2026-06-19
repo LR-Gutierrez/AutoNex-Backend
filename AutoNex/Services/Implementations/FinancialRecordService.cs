@@ -44,12 +44,13 @@ public class FinancialRecordService : IFinancialRecordService
             .OrderByDescending(r => r.Date)
             .ThenByDescending(r => r.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, r => r.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, r => r.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<FinancialRecordResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var record = await _context.FinancialRecords
+            .AsNoTracking()
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
@@ -58,7 +59,7 @@ public class FinancialRecordService : IFinancialRecordService
 
     public async Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request, int userId, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken)
+        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Usuario no encontrado");
 
         var record = new FinancialRecord
@@ -72,7 +73,7 @@ public class FinancialRecordService : IFinancialRecordService
         };
 
         _context.FinancialRecords.Add(record);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return record.ToResponse();
     }
@@ -91,18 +92,18 @@ public class FinancialRecordService : IFinancialRecordService
         record.Date = ToUtc(request.Date) ?? request.Date;
         record.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return record.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var record = await _context.FinancialRecords.FindAsync(new object[] { id }, cancellationToken);
+        var record = await _context.FinancialRecords.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (record is null) return false;
 
         record.IsDeleted = true;
         record.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 
@@ -118,10 +119,10 @@ public class FinancialRecordService : IFinancialRecordService
         if (utcTo.HasValue)
             query = query.Where(r => r.Date <= utcTo.Value);
 
-        var incomeSum = await query.Where(r => r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
-        var expenseSum = await query.Where(r => r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
-        var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync(cancellationToken);
-        var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync(cancellationToken);
+        var incomeSum = await query.Where(r => r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount, cancellationToken).ConfigureAwait(false) ?? 0;
+        var expenseSum = await query.Where(r => r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount, cancellationToken).ConfigureAwait(false) ?? 0;
+        var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync(cancellationToken).ConfigureAwait(false);
+        var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync(cancellationToken).ConfigureAwait(false);
 
         return new FinancialSummaryResponse(
             incomeSum,

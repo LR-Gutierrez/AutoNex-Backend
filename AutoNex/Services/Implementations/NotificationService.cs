@@ -45,7 +45,7 @@ public class NotificationService : INotificationService
 
         query = query.OrderByDescending(n => n.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse(), cancellationToken);
+        return await query.ToPagedResponseAsync(page, pageSize, n => n.ToResponse(), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<NotificationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -61,8 +61,23 @@ public class NotificationService : INotificationService
 
     public async Task<NotificationResponse> SendAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
     {
-        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken)
+        var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
+
+        NotificationStatus status;
+        DateTime? sentAt;
+
+        if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
+        {
+            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
+            status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
+            sentAt = sent ? DateTime.UtcNow : null;
+        }
+        else
+        {
+            status = NotificationStatus.Sent;
+            sentAt = DateTime.UtcNow;
+        }
 
         var notification = new Notification
         {
@@ -71,29 +86,16 @@ public class NotificationService : INotificationService
             Type = request.Type,
             Recipient = request.Recipient,
             Message = request.Message,
-            Status = NotificationStatus.Pending
+            Status = status,
+            SentAt = sentAt
         };
 
         _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
-        {
-            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken);
-            notification.Status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
-            notification.SentAt = sent ? DateTime.UtcNow : null;
-        }
-        else
-        {
-            notification.Status = NotificationStatus.Sent;
-            notification.SentAt = DateTime.UtcNow;
-        }
+        var response = (await GetByIdAsync(notification.Id, cancellationToken).ConfigureAwait(false))!;
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        var response = (await GetByIdAsync(notification.Id, cancellationToken))!;
-
-        await _hubContext.Clients.Group("all").SendAsync("newNotification", response, cancellationToken);
+        await _hubContext.Clients.Group("all").SendAsync("newNotification", response, cancellationToken).ConfigureAwait(false);
 
         return response;
     }
@@ -101,6 +103,7 @@ public class NotificationService : INotificationService
     public async Task<NotificationResponse?> SendReminderAsync(int alertId, CancellationToken cancellationToken = default)
     {
         var alert = await _context.MileageAlerts
+            .AsNoTracking()
             .Include(a => a.Vehicle)
                 .ThenInclude(v => v.Client)
             .FirstOrDefaultAsync(a => a.Id == alertId, cancellationToken);
@@ -113,6 +116,7 @@ public class NotificationService : INotificationService
             throw new InvalidOperationException("El cliente no tiene teléfono registrado");
 
         var currentKm = await _context.ServiceOrders
+            .AsNoTracking()
             .Where(o => o.VehicleId == alert.VehicleId && o.Status == Enums.ServiceOrderStatus.Completed)
             .OrderByDescending(o => o.Date)
             .Select(o => (int?)o.CurrentKm)
@@ -131,6 +135,6 @@ public class NotificationService : INotificationService
             message
         );
 
-        return await SendAsync(request, cancellationToken);
+        return await SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }
