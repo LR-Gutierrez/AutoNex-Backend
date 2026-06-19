@@ -46,7 +46,7 @@ public class BcvFetchJob : IJob
             return;
         }
 
-        var dateString = result.ValueDate!.Value.Date;
+        var dateString = result.ValueDate!.Value.ToUniversalTime().Date;
         var exists = await db.CurrencyNewsletters
             .AnyAsync(n => n.ValueDate.Date == dateString
                         && n.Status == NewsletterStatus.Draft
@@ -67,7 +67,7 @@ public class BcvFetchJob : IJob
         var newsletter = new CurrencyNewsletter
         {
             PublishedAt = DateTime.UtcNow,
-            ValueDate = result.ValueDate!.Value,
+            ValueDate = result.ValueDate!.Value.ToUniversalTime(),
             Observations = "Sincronización oficial BCV.",
             CreatedBy = 1,
             IpAddress = "127.0.0.1",
@@ -101,7 +101,7 @@ public class BcvFetchJob : IJob
         await db.SaveChangesAsync(context.CancellationToken);
 
         await hubContext.Clients.Group("exchange-updates")
-            .SendAsync("RatePublished", new { newsletterId = newsletter.Id },
+            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id },
                 context.CancellationToken);
 
         _logger.LogInformation("Nuevo draft BCV creado: #{NewsletterId}", newsletter.Id);

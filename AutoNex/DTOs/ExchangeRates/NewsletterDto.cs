@@ -8,6 +8,6 @@ public record NewsletterDto
     public DateTime PublishedAt { get; init; }
     public DateTime ValueDate { get; init; }
     public string? Observations { get; init; }
-    public NewsletterStatus Status { get; init; }
+    public int Status { get; init; }
     public List<ExchangeRateDto> ExchangeRates { get; init; } = [];
 }

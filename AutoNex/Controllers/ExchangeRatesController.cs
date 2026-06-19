@@ -18,12 +18,15 @@ public class ExchangeRatesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IExchangeRateService _rateService;
     private readonly IHubContext<ExchangeRateHub> _hubContext;
+    private readonly IBcvScraperService _scraper;
 
-    public ExchangeRatesController(AppDbContext db, IExchangeRateService rateService, IHubContext<ExchangeRateHub> hubContext)
+    public ExchangeRatesController(AppDbContext db, IExchangeRateService rateService,
+        IHubContext<ExchangeRateHub> hubContext, IBcvScraperService scraper)
     {
         _db = db;
         _rateService = rateService;
         _hubContext = hubContext;
+        _scraper = scraper;
     }
 
     [HttpGet]
@@ -65,6 +68,9 @@ public class ExchangeRatesController : ControllerBase
 
         if (newsletter == null) return NotFound();
 
+        if (newsletter.Status != NewsletterStatus.Draft)
+            return BadRequest("Solo se pueden editar boletines en estado Draft");
+
         newsletter.PublishedAt = request.PublishedAt;
         newsletter.ValueDate = request.ValueDate;
         newsletter.Observations = request.Observations;
@@ -105,7 +111,7 @@ public class ExchangeRatesController : ControllerBase
             PublishedAt = newsletter.PublishedAt,
             ValueDate = newsletter.ValueDate,
             Observations = newsletter.Observations,
-            Status = newsletter.Status,
+            Status = (int)newsletter.Status,
             ExchangeRates = dtoRates
         });
     }
@@ -158,7 +164,7 @@ public class ExchangeRatesController : ControllerBase
         _rateService.ClearCache();
 
         await _hubContext.Clients.Group("exchange-updates")
-            .SendAsync("RateAuthorized", new { newsletterId = id });
+            .SendAsync("ExchangeRateAuthorized", new { newsletterId = id });
 
         return Ok(new { message = "Boletín autorizado correctamente" });
     }
@@ -198,6 +204,80 @@ public class ExchangeRatesController : ControllerBase
 
         _rateService.ClearCache();
         return Ok(new { message = "Boletín reactivado" });
+    }
+
+    [HttpPost("bcv-fetch")]
+    public async Task<IActionResult> BcvFetch()
+    {
+        var result = await _scraper.FetchCurrentRatesAsync();
+        if (!result.IsSuccess)
+            return BadRequest(new { message = "Error al consultar BCV", error = result.Error });
+
+        var dateString = result.ValueDate!.Value.ToUniversalTime().Date;
+        var exists = await _db.CurrencyNewsletters
+            .AnyAsync(n => n.ValueDate.Date == dateString
+                        && n.Status == NewsletterStatus.Draft
+                        && n.IsActive);
+
+        if (exists)
+        {
+            await _db.CurrencyNewsletters
+                .Where(n => n.ValueDate.Date == dateString
+                         && n.Status == NewsletterStatus.Draft
+                         && n.IsActive)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(n => n.IsActive, false)
+                    .SetProperty(n => n.Observations,
+                        n => n.Observations + " (reemplazado)"));
+        }
+
+        var newsletter = new Models.CurrencyNewsletter
+        {
+            PublishedAt = DateTime.UtcNow,
+            ValueDate = result.ValueDate!.Value.ToUniversalTime(),
+            Observations = "Sincronización manual BCV.",
+            CreatedBy = 1,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+            IsActive = true,
+            Status = NewsletterStatus.Draft,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.CurrencyNewsletters.Add(newsletter);
+        await _db.SaveChangesAsync();
+
+        foreach (var (iso, value) in result.Rates)
+        {
+            var currencyId = await _db.Currencies
+                .Where(c => c.IsoCode == iso)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync();
+
+            if (currencyId > 0)
+            {
+                _db.ExchangeRates.Add(new Models.ExchangeRate
+                {
+                    Value = value,
+                    CurrencyId = currencyId,
+                    CurrencyNewsletterId = newsletter.Id,
+                    CreatedBy = 1,
+                    IpAddress = newsletter.IpAddress
+                });
+            }
+        }
+        await _db.SaveChangesAsync();
+
+        await _hubContext.Clients.Group("exchange-updates")
+            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id });
+
+        var dto = await _db.CurrencyNewsletters
+            .AsNoTracking()
+            .Include(n => n.ExchangeRates).ThenInclude(r => r.Currency)
+            .Where(n => n.Id == newsletter.Id)
+            .Select(n => n.ToDto())
+            .FirstAsync();
+
+        return Ok(dto);
     }
 
     [HttpPost("autoupdate-bcv/toggle")]

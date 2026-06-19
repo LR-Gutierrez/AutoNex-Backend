@@ -10,7 +10,7 @@ public static class MappingExtensions
         PublishedAt = n.PublishedAt,
         ValueDate = n.ValueDate,
         Observations = n.Observations,
-        Status = n.Status,
+        Status = (int)n.Status,
         ExchangeRates = n.ExchangeRates.Select(r => new ExchangeRateDto
         {
             Id = r.Id,

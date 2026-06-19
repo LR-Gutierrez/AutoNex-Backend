@@ -746,7 +746,7 @@ public class BcvFetchJob : IJob
 
         // 6. SignalR broadcast
         await hubContext.Clients.Group("exchange-updates")
-            .SendAsync("RatePublished", new { newsletterId = newsletter.Id },
+            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id },
                 context.CancellationToken);
 
         _logger.LogInformation("Nuevo draft BCV creado: #{NewsletterId}", newsletter.Id);
@@ -769,8 +769,8 @@ Lógica:
   4. ClearCache() via ExchangeRateService
   5. Obtener USD rate actual
   6. SignalR:
-     - "RateInEffect" a grupo "exchange-updates"
-     - "LiveUpdate" a grupo "exchange-rates-public"
+      - "ExchangeRateInEffect" a grupo "exchange-updates"
+      - "PublicExchangeRate" a grupo "exchange-rates-public"
 ```
 
 ### 6.4 BcvAuditJob → `bcv:audit`
@@ -845,10 +845,10 @@ public class ExchangeRateHub : Hub
 
 | Evento           | Grupo                   | Cuándo                              |
 | ---------------- | ----------------------- | ----------------------------------- |
-| `RatePublished`  | `exchange-updates`      | BcvFetchJob crea un Draft           |
-| `RateAuthorized` | `exchange-updates`      | Usuario autoriza Draft vía API      |
-| `RateInEffect`   | `exchange-updates`      | BcvActivateJob publica a medianoche |
-| `LiveUpdate`     | `exchange-rates-public` | Broadcast público del rate USD      |
+| `ExchangeRatePublished`  | `exchange-updates`      | BcvFetchJob crea un Draft                     |
+| `ExchangeRateAuthorized` | `exchange-updates`      | Usuario autoriza Draft vía API                |
+| `ExchangeRateInEffect`   | `exchange-updates`      | BcvActivateJob publica a medianoche           |
+| `PublicExchangeRate`     | `exchange-rates-public` | Broadcast público del rate USD (solo USD)     |
 
 ### 7.3 Mapeo de Endpoint
 
@@ -935,7 +935,7 @@ public class ExchangeRatesController : ControllerBase
         _rateService.ClearCache();
 
         await _hubContext.Clients.Group("exchange-updates")
-            .SendAsync("RateAuthorized", new { newsletterId = id });
+            .SendAsync("ExchangeRateAuthorized", new { newsletterId = id });
 
         return Ok(new { message = "Boletín autorizado correctamente" });
     }
@@ -1096,12 +1096,12 @@ const connection = new signalR.HubConnectionBuilder()
 await connection.start();
 await connection.invoke("JoinGroup", "exchange-updates");
 
-connection.on("RatePublished", (data) => {
+connection.on("ExchangeRatePublished", (data) => {
   // Recargar tabla o mostrar notificación
   console.log("Nuevas tasas pendientes", data);
 });
 
-connection.on("LiveUpdate", (data) => {
+connection.on("PublicExchangeRate", (data) => {
   // Actualizar widget de tasa en vivo
   console.log("Tasa USD actualizada", data);
 });
@@ -1456,12 +1456,12 @@ dotnet add package Quartz.Extensions.Hosting
   │           SignalR Hub                      │
   │                                           │
   │  "exchange-updates" (privado, JWT)        │
-  │    └ RatePublished                        │
-  │    └ RateAuthorized                       │
-  │    └ RateInEffect                         │
-  │                                           │
-  │  "exchange-rates-public" (público/API Key)│
-  │    └ LiveUpdate (USD broadcast)           │
+  │    └ ExchangeRatePublished                        │
+  │    └ ExchangeRateAuthorized                       │
+  │    └ ExchangeRateInEffect                         │
+  │                                                   │
+  │  "exchange-rates-public" (público/API Key)        │
+  │    └ PublicExchangeRate (USD broadcast)           │
   └───────────────────────────────────────────┘
           │
           ▼
@@ -1479,15 +1479,15 @@ dotnet add package Quartz.Extensions.Hosting
 ```
 1. [BCV] Publica tasa en bcv.org.ve
 2. [BcvFetchJob] 4:10PM → scrapea → crea Draft (Status 1) en DB
-3. [SignalR] → "RatePublished" → notifica admins
+3. [SignalR] → "ExchangeRatePublished" → notifica admins
 4. [Admin] Abre panel, ve el Draft, hace clic en "Autorizar"
    → POST /api/exchange-rates/{id}/authorize (JWT)
 5. [API] Cambia Status 1 → 2, limpia cache
-6. [SignalR] → "RateAuthorized" → actualiza UI
+6. [SignalR] → "ExchangeRateAuthorized" → actualiza UI
 7. [BcvActivateJob] 00:00 VET → Status 2 → 3
    → Anterior Status 3 → 4 (Histórico)
    → Limpia cache
-8. [SignalR] → "RateInEffect" + "LiveUpdate($$$)"
+8. [SignalR] → "ExchangeRateInEffect" + "PublicExchangeRate($$$)"
 9. [ExchangeRateService] Desde ahora, GetLatestValueByCode("USD")
    devuelve la nueva tasa (cacheada por 1h)
 10. [Checkout/Ventas] Usan la tasa vigente automáticamente

@@ -255,6 +255,93 @@ public class ServiceOrderServiceTests
         var emptyResult = await service.GetAllAsync(null, null, null, null, "Completed", 1, 10);
         Assert.Empty(emptyResult.Items);
     }
+
+    [Fact]
+    public async Task PayAsync_WithBolivaresAndNoRate_Throws()
+    {
+        var context = await CreateSeedContextAsync();
+        var alertService = new MockMileageAlertService();
+        var exchangeRateService = Mock.Of<IExchangeRateService>();
+        var logger = Mock.Of<ILogger<ServiceOrderService>>();
+        var service = new ServiceOrderService(context, alertService, exchangeRateService, logger);
+
+        var created = await service.CreateAsync(new CreateServiceOrderRequest
+        {
+            VehicleId = 1,
+            ClientId = 1,
+            CurrentKm = 50000,
+            Items = [new CreateServiceOrderItemRequest { Type = "Service", ServiceId = 1, Quantity = 1, UnitPrice = 45 }]
+        }, 1);
+
+        await service.UpdateStatusAsync(created.Id, new UpdateServiceOrderStatusRequest { Status = ServiceOrderStatus.Completed });
+
+        Mock.Get(exchangeRateService)
+            .Setup(x => x.GetLatestValueByCodeAsync("USD", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((decimal?)null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.PayAsync(created.Id, 1, new PayOrderRequest(PaymentMethod.EfectivoBolivares, null, null, 2500)));
+    }
+
+    [Fact]
+    public async Task PayAsync_WithBolivaresAndRate_CreatesRecord()
+    {
+        var context = await CreateSeedContextAsync();
+        var alertService = new MockMileageAlertService();
+        var exchangeRateService = Mock.Of<IExchangeRateService>();
+        var logger = Mock.Of<ILogger<ServiceOrderService>>();
+        var service = new ServiceOrderService(context, alertService, exchangeRateService, logger);
+
+        var created = await service.CreateAsync(new CreateServiceOrderRequest
+        {
+            VehicleId = 1,
+            ClientId = 1,
+            CurrentKm = 50000,
+            Items = [new CreateServiceOrderItemRequest { Type = "Service", ServiceId = 1, Quantity = 1, UnitPrice = 45 }]
+        }, 1);
+
+        await service.UpdateStatusAsync(created.Id, new UpdateServiceOrderStatusRequest { Status = ServiceOrderStatus.Completed });
+
+        Mock.Get(exchangeRateService)
+            .Setup(x => x.GetLatestValueByCodeAsync("USD", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(50.25m);
+
+        var result = await service.PayAsync(created.Id, 1, new PayOrderRequest(PaymentMethod.EfectivoBolivares, null, null, 2500));
+
+        Assert.Equal(ServiceOrderStatus.Paid, result.Status);
+
+        var record = await context.FinancialRecords.FirstOrDefaultAsync();
+        Assert.NotNull(record);
+        Assert.Equal(45m, record.Amount);
+        Assert.Equal(2500m, record.AmountInBs);
+        Assert.Equal(50.25m, record.ExchangeRateValue);
+    }
+
+    [Fact]
+    public async Task PayAsync_WithUsdPayment_NoExchangeRateFields()
+    {
+        var context = await CreateSeedContextAsync();
+        var service = CreateService(context);
+
+        var created = await service.CreateAsync(new CreateServiceOrderRequest
+        {
+            VehicleId = 1,
+            ClientId = 1,
+            CurrentKm = 50000,
+            Items = [new CreateServiceOrderItemRequest { Type = "Service", ServiceId = 1, Quantity = 1, UnitPrice = 45 }]
+        }, 1);
+
+        await service.UpdateStatusAsync(created.Id, new UpdateServiceOrderStatusRequest { Status = ServiceOrderStatus.Completed });
+
+        var result = await service.PayAsync(created.Id, 1, new PayOrderRequest(PaymentMethod.EfectivoDolares, null, null));
+
+        Assert.Equal(ServiceOrderStatus.Paid, result.Status);
+
+        var record = await context.FinancialRecords.FirstOrDefaultAsync();
+        Assert.NotNull(record);
+        Assert.Null(record.AmountInBs);
+        Assert.Null(record.ExchangeRateValue);
+    }
 }
 
 public class MockMileageAlertService : IMileageAlertService

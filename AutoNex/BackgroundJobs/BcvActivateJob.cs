@@ -58,13 +58,13 @@ public class BcvActivateJob : IJob
         var usdRate = await rateService.GetLatestValueByCodeAsync("USD", context.CancellationToken);
 
         await hubContext.Clients.Group("exchange-updates")
-            .SendAsync("RateInEffect", new { newsletterId = authorized.Id },
+            .SendAsync("ExchangeRateInEffect", new { newsletterId = authorized.Id },
                 context.CancellationToken);
 
         if (usdRate.HasValue)
         {
             await hubContext.Clients.Group("exchange-rates-public")
-                .SendAsync("LiveUpdate", new { currency = "USD", value = usdRate.Value },
+                .SendAsync("PublicExchangeRate", new { currency = "USD", value = usdRate.Value },
                     context.CancellationToken);
         }
 

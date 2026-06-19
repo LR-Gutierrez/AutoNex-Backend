@@ -134,17 +134,17 @@ builder.Services.AddQuartz(q =>
 {
     q.AddJob<BcvFetchJob>(j => j.WithIdentity("bcv-fetch"));
     q.AddTrigger(t => t.ForJob("bcv-fetch")
-        .WithCronSchedule("10 16 * * 1-5", s =>
+        .WithCronSchedule("0 10 16 ? * MON-FRI", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 
     q.AddJob<BcvActivateJob>(j => j.WithIdentity("bcv-activate"));
     q.AddTrigger(t => t.ForJob("bcv-activate")
-        .WithCronSchedule("0 0 * * *", s =>
+        .WithCronSchedule("0 0 0 ? * *", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 
     q.AddJob<BcvAuditJob>(j => j.WithIdentity("bcv-audit"));
     q.AddTrigger(t => t.ForJob("bcv-audit")
-        .WithCronSchedule("0 18 * * *", s =>
+        .WithCronSchedule("0 0 18 ? * *", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 });
 builder.Services.AddQuartzHostedService(options =>

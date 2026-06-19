@@ -138,7 +138,7 @@ public class BcvScraperService : IBcvScraperService
         cleaned = cleaned.Replace(" de ", " ");
 
         return DateTime.TryParse(cleaned, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)
-            ? dt
+            ? DateTime.SpecifyKind(dt, DateTimeKind.Utc)
             : DateTime.UtcNow;
     }
 }
