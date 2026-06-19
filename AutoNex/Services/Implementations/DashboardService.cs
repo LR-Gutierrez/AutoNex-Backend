@@ -21,10 +21,10 @@ public class DashboardService : IDashboardService
         var orderStart = ToUtc(startDate) ?? DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
         var orderEnd = ToUtc(endDate) ?? orderStart.AddDays(1);
 
-        var orders = await GetOrdersSummaryAsync(orderStart, orderEnd, cancellationToken).ConfigureAwait(false);
-        var lowStock = await GetLowStockSummaryAsync(cancellationToken).ConfigureAwait(false);
-        var alerts = await GetAlertsSummaryAsync(cancellationToken).ConfigureAwait(false);
-        var financial = await GetFinancialSummaryAsync(orderStart, orderEnd, cancellationToken).ConfigureAwait(false);
+        var orders = await GetOrdersSummaryAsync(orderStart, orderEnd, cancellationToken);
+        var lowStock = await GetLowStockSummaryAsync(cancellationToken);
+        var alerts = await GetAlertsSummaryAsync(cancellationToken);
+        var financial = await GetFinancialSummaryAsync(orderStart, orderEnd, cancellationToken);
 
         return new DashboardResponse(orders, lowStock, alerts, financial);
     }
@@ -119,8 +119,8 @@ public class DashboardService : IDashboardService
             .Where(r => r.Date >= minStart && r.Date < maxEnd)
             .ToListAsync(cancellationToken);
 
-        var lowStock = await GetLowStockSummaryAsync(cancellationToken).ConfigureAwait(false);
-        var alerts = await GetAlertsSummaryAsync(cancellationToken).ConfigureAwait(false);
+        var lowStock = await GetLowStockSummaryAsync(cancellationToken);
+        var alerts = await GetAlertsSummaryAsync(cancellationToken);
 
         var result = new Dictionary<string, DashboardResponse>(periods.Count);
         foreach (var (name, (start, end)) in periods)

@@ -34,7 +34,7 @@ public class ToolService : IToolService
 
         query = query.OrderByDescending(t => t.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse(), cancellationToken).ConfigureAwait(false);
+        return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse(), cancellationToken);
     }
 
     public async Task<ToolResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -59,14 +59,14 @@ public class ToolService : IToolService
         };
 
         _context.Tools.Add(tool);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(tool.Id, cancellationToken).ConfigureAwait(false))!;
+        return (await GetByIdAsync(tool.Id, cancellationToken))!;
     }
 
     public async Task<ToolResponse?> UpdateAsync(int id, UpdateToolRequest request, CancellationToken cancellationToken = default)
     {
-        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken);
         if (tool is null) return null;
 
         tool.Name = request.Name;
@@ -76,18 +76,18 @@ public class ToolService : IToolService
         tool.PurchaseDate = request.PurchaseDate;
         tool.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var tool = await _context.Tools.FindAsync(new object[] { id }, cancellationToken);
         if (tool is null) return false;
 
         tool.IsDeleted = true;
         tool.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

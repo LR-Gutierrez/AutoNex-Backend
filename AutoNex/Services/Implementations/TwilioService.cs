@@ -38,7 +38,7 @@ public class TwilioService : ITwilioService
                 body: message,
                 from: from,
                 to: toNumber
-            ).ConfigureAwait(false);
+            );
 
             return true;
         }

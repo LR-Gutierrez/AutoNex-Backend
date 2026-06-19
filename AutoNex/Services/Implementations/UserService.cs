@@ -28,16 +28,16 @@ public class UserService : IUserService
 
     public async Task<UserResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken);
         return user?.ToResponse();
     }
 
     public async Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken);
         if (user is null) return null;
 
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != id, cancellationToken).ConfigureAwait(false))
+        if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != id, cancellationToken))
             throw new InvalidOperationException("El email ya está en uso por otro usuario");
 
         user.FullName = request.FullName;
@@ -46,18 +46,18 @@ public class UserService : IUserService
         user.Phone = request.Phone;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return user.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken);
         if (user is null) return false;
 
         user.IsActive = false;
         _context.Users.Remove(user);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

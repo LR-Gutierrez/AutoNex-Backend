@@ -24,12 +24,12 @@ public class SupplierService : ISupplierService
             .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
 
-        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken).ConfigureAwait(false);
+        return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken);
     }
 
     public async Task<SupplierResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken);
         return supplier?.ToResponse();
     }
 
@@ -44,14 +44,14 @@ public class SupplierService : ISupplierService
         };
 
         _context.Suppliers.Add(supplier);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return supplier.ToResponse();
     }
 
     public async Task<SupplierResponse?> UpdateAsync(int id, UpdateSupplierRequest request, CancellationToken cancellationToken = default)
     {
-        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken);
         if (supplier is null) return null;
 
         supplier.Name = request.Name;
@@ -60,18 +60,18 @@ public class SupplierService : ISupplierService
         supplier.Email = request.Email;
         supplier.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return supplier.ToResponse();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var supplier = await _context.Suppliers.FindAsync(new object[] { id }, cancellationToken);
         if (supplier is null) return false;
 
         supplier.IsDeleted = true;
         supplier.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

@@ -30,7 +30,7 @@ public class ConsumableService : IConsumableService
 
         query = query.OrderByDescending(c => c.CreatedAt);
 
-        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken).ConfigureAwait(false);
+        return await query.ToPagedResponseAsync(page, pageSize, c => c.ToResponse(), cancellationToken);
     }
 
     public async Task<List<ConsumableResponse>> GetLowStockAsync(CancellationToken cancellationToken = default)
@@ -68,14 +68,14 @@ public class ConsumableService : IConsumableService
         };
 
         _context.Consumables.Add(consumable);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(consumable.Id, cancellationToken).ConfigureAwait(false))!;
+        return (await GetByIdAsync(consumable.Id, cancellationToken))!;
     }
 
     public async Task<ConsumableResponse?> UpdateAsync(int id, UpdateConsumableRequest request, CancellationToken cancellationToken = default)
     {
-        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken);
         if (consumable is null) return null;
 
         consumable.Name = request.Name;
@@ -86,18 +86,18 @@ public class ConsumableService : IConsumableService
         consumable.SupplierId = request.SupplierId;
         consumable.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return (await GetByIdAsync(id, cancellationToken).ConfigureAwait(false))!;
+        await _context.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(id, cancellationToken))!;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
+        var consumable = await _context.Consumables.FindAsync(new object[] { id }, cancellationToken);
         if (consumable is null) return false;
 
         consumable.IsDeleted = true;
         consumable.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

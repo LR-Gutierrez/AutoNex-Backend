@@ -26,7 +26,7 @@ public class AuthService : IAuthService
     {
         var normalizedEmail = request.Email.ToLowerInvariant().Trim();
 
-        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken).ConfigureAwait(false))
+        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken))
             throw new InvalidOperationException("El email ya está registrado");
 
         var user = new User
@@ -39,7 +39,7 @@ public class AuthService : IAuthService
         };
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse(
             user.Id,
@@ -52,7 +52,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken).ConfigureAwait(false)
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken)
             ?? throw new UnauthorizedAccessException("Credenciales inválidas");
 
         if (!user.IsActive)
