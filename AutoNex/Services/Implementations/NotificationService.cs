@@ -64,21 +64,6 @@ public class NotificationService : INotificationService
         var client = await _context.Clients.FindAsync(new object[] { request.ClientId }, cancellationToken).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
-        NotificationStatus status;
-        DateTime? sentAt;
-
-        if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
-        {
-            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
-            status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
-            sentAt = sent ? DateTime.UtcNow : null;
-        }
-        else
-        {
-            status = NotificationStatus.Sent;
-            sentAt = DateTime.UtcNow;
-        }
-
         var notification = new Notification
         {
             ClientId = request.ClientId,
@@ -86,11 +71,24 @@ public class NotificationService : INotificationService
             Type = request.Type,
             Recipient = request.Recipient,
             Message = request.Message,
-            Status = status,
-            SentAt = sentAt
+            Status = NotificationStatus.Pending
         };
 
         _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
+        {
+            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
+            notification.Status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
+            notification.SentAt = sent ? DateTime.UtcNow : null;
+        }
+        else
+        {
+            notification.Status = NotificationStatus.Sent;
+            notification.SentAt = DateTime.UtcNow;
+        }
+
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         var response = (await GetByIdAsync(notification.Id, cancellationToken).ConfigureAwait(false))!;
