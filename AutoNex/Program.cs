@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using AutoNex.BackgroundJobs;
 using AutoNex.Data;
+using AutoNex.Data.Seeders;
 using AutoNex.Enums;
 using AutoNex.Helpers;
 using AutoNex.Hubs;
@@ -13,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,7 +84,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ExchangeRatesUpdates", policy =>
+        policy.RequireClaim("permission", "autoupdate-bcv"));
+});
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
@@ -103,6 +110,43 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
+
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("bcv", client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-ES,es;q=0.9");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+});
+
+builder.Services.AddScoped<IBcvScraperService, BcvScraperService>();
+builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+
+builder.Services.AddQuartz(q =>
+{
+    q.AddJob<BcvFetchJob>(j => j.WithIdentity("bcv-fetch"));
+    q.AddTrigger(t => t.ForJob("bcv-fetch")
+        .WithCronSchedule("10 16 * * 1-5", s =>
+            s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
+
+    q.AddJob<BcvActivateJob>(j => j.WithIdentity("bcv-activate"));
+    q.AddTrigger(t => t.ForJob("bcv-activate")
+        .WithCronSchedule("0 0 * * *", s =>
+            s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
+
+    q.AddJob<BcvAuditJob>(j => j.WithIdentity("bcv-audit"));
+    q.AddTrigger(t => t.ForJob("bcv-audit")
+        .WithCronSchedule("0 18 * * *", s =>
+            s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
+});
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -156,6 +200,8 @@ using (var scope = app.Services.CreateScope())
         context.Users.Add(admin);
         context.SaveChanges();
     }
+
+    await AppDbSeeder.SeedAsync(context);
 }
 
 if (app.Environment.IsDevelopment())
@@ -189,6 +235,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<DashboardHub>("/hubs/dashboard");
 app.MapHub<NotificationsHub>("/hubs/notifications");
+app.MapHub<ExchangeRateHub>("/hubs/exchange-rates");
 app.MapHealthChecks("/health");
 
 app.Run();
