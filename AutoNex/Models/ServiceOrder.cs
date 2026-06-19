@@ -18,6 +18,8 @@ public class ServiceOrder
     public PaymentMethod? PaymentMethod { get; set; }
     public string? OperationNumber { get; set; }
     public DateTime? OperationDate { get; set; }
+    public decimal? AmountInBs { get; set; }
+    public decimal? ExchangeRateValue { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

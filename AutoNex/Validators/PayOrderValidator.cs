@@ -18,6 +18,10 @@ public class PayOrderValidator : AbstractValidator<PayOrderRequest>
 
             RuleFor(x => x.OperationDate)
                 .NotNull().WithMessage("La fecha de operación es obligatoria para pagos electrónicos");
+
+            RuleFor(x => x.AmountInBs)
+                .NotNull().WithMessage("El monto en bolívares es obligatorio para pagos electrónicos en Bs")
+                .GreaterThan(0).WithMessage("El monto en bolívares debe ser mayor a 0");
         });
 
         When(x => x.PaymentMethod == PaymentMethod.EfectivoBolivares, () =>

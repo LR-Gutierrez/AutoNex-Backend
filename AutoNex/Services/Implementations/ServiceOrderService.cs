@@ -297,7 +297,7 @@ public class ServiceOrderService : IServiceOrderService
         decimal? amountInBs = null;
         decimal? exchangeRateValue = null;
 
-        if (request.PaymentMethod == PaymentMethod.EfectivoBolivares)
+        if (request.PaymentMethod is PaymentMethod.EfectivoBolivares or PaymentMethod.PagoMovil or PaymentMethod.Transferencia)
         {
             var rate = await _exchangeRateService.GetLatestValueByCodeAsync("USD", cancellationToken).ConfigureAwait(false);
             if (rate is null or 0)
@@ -323,6 +323,8 @@ public class ServiceOrderService : IServiceOrderService
         order.PaymentMethod = request.PaymentMethod;
         order.OperationNumber = request.OperationNumber;
         order.OperationDate = request.OperationDate;
+        order.AmountInBs = amountInBs;
+        order.ExchangeRateValue = exchangeRateValue;
         order.UpdatedAt = DateTime.UtcNow;
 
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -361,6 +363,8 @@ public class ServiceOrderService : IServiceOrderService
             order.PaymentMethod,
             order.OperationNumber,
             order.OperationDate,
+            order.AmountInBs,
+            order.ExchangeRateValue,
             order.CreatedAt,
             order.Items.Select(i => new ServiceOrderItemResponse(
                 i.Id,

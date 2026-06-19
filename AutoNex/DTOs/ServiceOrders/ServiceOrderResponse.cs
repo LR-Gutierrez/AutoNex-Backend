@@ -20,6 +20,8 @@ public record ServiceOrderResponse(
     PaymentMethod? PaymentMethod,
     string? OperationNumber,
     DateTime? OperationDate,
+    decimal? AmountInBs,
+    decimal? ExchangeRateValue,
     DateTime CreatedAt,
     List<ServiceOrderItemResponse> Items
 );

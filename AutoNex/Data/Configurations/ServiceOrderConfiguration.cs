@@ -49,6 +49,14 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             .HasColumnName("operation_date")
             .HasColumnType("date");
 
+        builder.Property(o => o.AmountInBs)
+            .HasColumnName("amount_in_bs")
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.ExchangeRateValue)
+            .HasColumnName("exchange_rate_value")
+            .HasPrecision(18, 8);
+
         builder.Property(o => o.IsDeleted).HasColumnName("is_deleted");
         builder.Property(o => o.CreatedAt).HasColumnName("created_at");
         builder.Property(o => o.UpdatedAt).HasColumnName("updated_at");
