@@ -28,6 +28,14 @@ public class FinancialRecordConfiguration : IEntityTypeConfiguration<FinancialRe
             .HasColumnName("amount")
             .HasPrecision(18, 2);
 
+        builder.Property(r => r.AmountInBs)
+            .HasColumnName("amount_in_bs")
+            .HasPrecision(18, 2);
+
+        builder.Property(r => r.ExchangeRateValue)
+            .HasColumnName("exchange_rate_value")
+            .HasPrecision(18, 8);
+
         builder.Property(r => r.Description)
             .HasColumnName("description")
             .HasMaxLength(500);

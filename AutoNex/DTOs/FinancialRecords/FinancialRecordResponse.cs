@@ -7,6 +7,8 @@ public record FinancialRecordResponse(
     FinancialRecordType Type,
     FinancialCategory Category,
     decimal Amount,
+    decimal? AmountInBs,
+    decimal? ExchangeRateValue,
     string? Description,
     DateTime Date,
     int UserId,

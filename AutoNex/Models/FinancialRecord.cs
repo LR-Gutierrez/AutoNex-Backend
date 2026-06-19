@@ -8,6 +8,8 @@ public class FinancialRecord
     public FinancialRecordType Type { get; set; }
     public FinancialCategory Category { get; set; }
     public decimal Amount { get; set; }
+    public decimal? AmountInBs { get; set; }
+    public decimal? ExchangeRateValue { get; set; }
     public string? Description { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public int UserId { get; set; }

@@ -69,8 +69,9 @@ public class ServiceOrderServiceTests
     private static ServiceOrderService CreateService(AppDbContext context)
     {
         var alertService = new MockMileageAlertService();
+        var exchangeRateService = Mock.Of<IExchangeRateService>();
         var logger = Mock.Of<ILogger<ServiceOrderService>>();
-        return new ServiceOrderService(context, alertService, logger);
+        return new ServiceOrderService(context, alertService, exchangeRateService, logger);
     }
 
     [Fact]

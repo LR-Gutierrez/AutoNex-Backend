@@ -13,12 +13,14 @@ public class ServiceOrderService : IServiceOrderService
 {
     private readonly AppDbContext _context;
     private readonly IMileageAlertService _mileageAlertService;
+    private readonly IExchangeRateService _exchangeRateService;
     private readonly ILogger<ServiceOrderService> _logger;
 
-    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService, ILogger<ServiceOrderService> logger)
+    public ServiceOrderService(AppDbContext context, IMileageAlertService mileageAlertService, IExchangeRateService exchangeRateService, ILogger<ServiceOrderService> logger)
     {
         _context = context;
         _mileageAlertService = mileageAlertService;
+        _exchangeRateService = exchangeRateService;
         _logger = logger;
     }
 
@@ -291,11 +293,27 @@ public class ServiceOrderService : IServiceOrderService
         if (order.Status != ServiceOrderStatus.Completed)
             throw new InvalidOperationException("Solo órdenes completadas pueden marcarse como pagadas");
 
+        decimal amountInUsd = order.TotalAmount;
+        decimal? amountInBs = null;
+        decimal? exchangeRateValue = null;
+
+        if (request.PaymentMethod == PaymentMethod.EfectivoBolivares)
+        {
+            var rate = await _exchangeRateService.GetLatestValueByCodeAsync("USD", cancellationToken).ConfigureAwait(false);
+            if (rate is null or 0)
+                throw new InvalidOperationException("No hay tasa de cambio USD vigente. Debe existir un boletín BCV publicado.");
+
+            exchangeRateValue = rate;
+            amountInBs = request.AmountInBs;
+        }
+
         var record = new FinancialRecord
         {
             Type = FinancialRecordType.Income,
             Category = FinancialCategory.Services,
-            Amount = order.TotalAmount,
+            Amount = amountInUsd,
+            AmountInBs = amountInBs,
+            ExchangeRateValue = exchangeRateValue,
             Description = $"Pago orden #{order.Id} - {order.Vehicle.Brand} {order.Vehicle.Model} ({order.Vehicle.LicensePlate})",
             Date = DateTime.UtcNow,
             UserId = userId
