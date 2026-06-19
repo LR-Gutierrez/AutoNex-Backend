@@ -5,12 +5,10 @@ using AutoNex.Enums;
 using AutoNex.Helpers;
 using AutoNex.Hubs;
 using AutoNex.Middleware;
-using AutoNex.Models;
 using AutoNex.Services.Implementations;
 using AutoNex.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -105,7 +103,6 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-builder.Services.Configure<SeedSettings>(builder.Configuration.GetSection("SeedData"));
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
 builder.Services.AddControllers()
@@ -149,20 +146,15 @@ using (var scope = app.Services.CreateScope())
 
     if (!context.Users.Any())
     {
-        var seedSettings = scope.ServiceProvider.GetRequiredService<IOptions<SeedSettings>>();
-        foreach (var seedUser in seedSettings.Value.Users)
+        var admin = new AutoNex.Models.User
         {
-            var role = Enum.Parse<UserRole>(seedUser.Role);
-            var user = new User
-            {
-                FullName = seedUser.FullName,
-                Email = seedUser.Email.ToLowerInvariant().Trim(),
-                PasswordHash = PasswordHelper.Hash(seedUser.Password),
-                Role = role,
-                IsActive = true
-            };
-            context.Users.Add(user);
-        }
+            FullName = "Admin AutoNex",
+            Email = "admin@autonex.com",
+            PasswordHash = PasswordHelper.Hash("Admin123"),
+            Role = UserRole.Admin,
+            IsActive = true
+        };
+        context.Users.Add(admin);
         await context.SaveChangesAsync();
     }
 }
