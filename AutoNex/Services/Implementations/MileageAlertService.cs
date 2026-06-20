@@ -177,8 +177,8 @@ public class MileageAlertService : IMileageAlertService
             var hasKmInterval = service.MaxKmInterval.HasValue && service.MaxKmInterval.Value > 0;
 
             DateTime? nextAlertDate = null;
-            if (service.RecommendedMonths is not null)
-                nextAlertDate = order.Date.AddMonths(service.RecommendedMonths.Value);
+            if (service.MaxMonth is not null)
+                nextAlertDate = order.Date.AddMonths(service.MaxMonth.Value);
 
             var alert = existingAlerts.FirstOrDefault(a => a.ServiceId == service.Id);
 

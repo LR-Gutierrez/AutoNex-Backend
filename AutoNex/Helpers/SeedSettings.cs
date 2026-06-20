@@ -26,7 +26,8 @@ public class SeedService
     public decimal DefaultPrice { get; init; }
     public int? MinKmInterval { get; init; }
     public int? MaxKmInterval { get; init; }
-    public int? RecommendedMonths { get; init; }
+    public int? MinMonth { get; init; }
+    public int? MaxMonth { get; init; }
 }
 
 public class SeedToolCategory

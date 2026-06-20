@@ -8,7 +8,8 @@ public class Service
     public decimal DefaultPrice { get; set; }
     public int? MinKmInterval { get; set; }
     public int? MaxKmInterval { get; set; }
-    public int? RecommendedMonths { get; set; }
+    public int? MinMonth { get; set; }
+    public int? MaxMonth { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

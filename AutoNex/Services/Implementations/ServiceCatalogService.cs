@@ -41,7 +41,8 @@ public class ServiceCatalogService : IServiceCatalogService
             DefaultPrice = request.DefaultPrice,
             MinKmInterval = request.MinKmInterval,
             MaxKmInterval = request.MaxKmInterval,
-            RecommendedMonths = request.RecommendedMonths
+            MinMonth = request.MinMonth,
+            MaxMonth = request.MaxMonth
         };
 
         _context.Services.Add(service);
@@ -60,7 +61,8 @@ public class ServiceCatalogService : IServiceCatalogService
         service.DefaultPrice = request.DefaultPrice;
         service.MinKmInterval = request.MinKmInterval;
         service.MaxKmInterval = request.MaxKmInterval;
-        service.RecommendedMonths = request.RecommendedMonths;
+        service.MinMonth = request.MinMonth;
+        service.MaxMonth = request.MaxMonth;
         service.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

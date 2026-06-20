@@ -7,6 +7,7 @@ public record ServiceResponse(
     decimal DefaultPrice,
     int? MinKmInterval,
     int? MaxKmInterval,
-    int? RecommendedMonths,
+    int? MinMonth,
+    int? MaxMonth,
     DateTime CreatedAt
 );

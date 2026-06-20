@@ -37,7 +37,8 @@ public static class AppDbSeeder
                 DefaultPrice = s.DefaultPrice,
                 MinKmInterval = s.MinKmInterval,
                 MaxKmInterval = s.MaxKmInterval,
-                RecommendedMonths = s.RecommendedMonths
+                MinMonth = s.MinMonth,
+                MaxMonth = s.MaxMonth
             }));
 
             await db.SaveChangesAsync();

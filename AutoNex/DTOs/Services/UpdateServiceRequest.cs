@@ -7,5 +7,6 @@ public record UpdateServiceRequest
     public decimal DefaultPrice { get; set; }
     public int? MinKmInterval { get; set; }
     public int? MaxKmInterval { get; set; }
-    public int? RecommendedMonths { get; set; }
+    public int? MinMonth { get; set; }
+    public int? MaxMonth { get; set; }
 }

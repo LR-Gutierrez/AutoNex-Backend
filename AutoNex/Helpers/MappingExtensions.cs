@@ -100,7 +100,8 @@ public static class MappingExtensions
             service.DefaultPrice,
             service.MinKmInterval,
             service.MaxKmInterval,
-            service.RecommendedMonths,
+            service.MinMonth,
+            service.MaxMonth,
             service.CreatedAt
         );
 

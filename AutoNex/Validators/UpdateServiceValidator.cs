@@ -25,8 +25,12 @@ public class UpdateServiceValidator : AbstractValidator<UpdateServiceRequest>
             .GreaterThan(0).When(x => x.MaxKmInterval.HasValue)
             .WithMessage("El intervalo máximo de km debe ser mayor a cero");
 
-        RuleFor(x => x.RecommendedMonths)
-            .GreaterThan(0).When(x => x.RecommendedMonths.HasValue)
-            .WithMessage("Los meses recomendados deben ser mayor a cero");
+        RuleFor(x => x.MinMonth)
+            .GreaterThan(0).When(x => x.MinMonth.HasValue)
+            .WithMessage("El mes mínimo debe ser mayor a cero");
+
+        RuleFor(x => x.MaxMonth)
+            .GreaterThan(0).When(x => x.MaxMonth.HasValue)
+            .WithMessage("El mes máximo debe ser mayor a cero");
     }
 }

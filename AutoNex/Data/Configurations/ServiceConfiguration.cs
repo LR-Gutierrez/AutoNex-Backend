@@ -31,8 +31,11 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
         builder.Property(s => s.MaxKmInterval)
             .HasColumnName("max_km_interval");
 
-        builder.Property(s => s.RecommendedMonths)
-            .HasColumnName("recommended_months");
+        builder.Property(s => s.MinMonth)
+            .HasColumnName("min_month");
+
+        builder.Property(s => s.MaxMonth)
+            .HasColumnName("max_month");
 
         builder.Property(s => s.IsDeleted)
             .HasColumnName("is_deleted");
