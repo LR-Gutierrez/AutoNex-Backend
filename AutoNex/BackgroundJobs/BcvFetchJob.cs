@@ -40,7 +40,16 @@ public class BcvFetchJob : IJob
             return;
         }
 
-        await ExecuteFetchAsync(db, scraper, hubContext, "Auto", _logger, context.CancellationToken);
+        var action = await ExecuteFetchAsync(db, scraper, hubContext, "Auto", _logger, context.CancellationToken);
+
+        if (action == "Auto_Inserted")
+        {
+            var setting = await db.Settings.FirstAsync(s => s.Key == "bcv_retry_enabled", context.CancellationToken);
+            setting.Value = "false";
+            setting.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(context.CancellationToken);
+            _logger.LogInformation("BCV retry desactivado tras Auto Inserted");
+        }
     }
 
     public static async Task<string> ExecuteFetchAsync(AppDbContext db, IBcvScraperService scraper,

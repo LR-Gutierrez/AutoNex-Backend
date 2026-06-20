@@ -16,6 +16,7 @@ API REST para la administración integral de un taller mecánico. Desarrollada e
 | **Alertas por Kilometraje** | Cálculo de desgaste estimado y recordatorios automáticos vía WhatsApp |
 | **Finanzas** | Control de ingresos y egresos del taller |
 | **Notificaciones** | Integración con Twilio/WhatsApp API para recordatorios |
+| **Tasas BCV** | Scraping automático del BCV, autorización manual, publicación programada, consulta en vivo vía API pública |
 
 ## Stack Tecnológico
 
@@ -37,3 +38,4 @@ API REST para la administración integral de un taller mecánico. Desarrollada e
 
 Ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para documentación técnica detallada.
 Ver [docs/MAINTENANCE_INTERVALS.md](docs/MAINTENANCE_INTERVALS.md) para tabla de referencia de intervalos de mantenimiento por tipo de servicio.
+Ver [docs/BCV.md](docs/BCV.md) para el flujo completo de tasas de cambio del BCV.

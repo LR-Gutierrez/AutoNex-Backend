@@ -3,6 +3,7 @@ using AutoNex.Data;
 using AutoNex.DTOs.ExchangeRates;
 using AutoNex.Enums;
 using AutoNex.Hubs;
+using AutoNex.Models;
 using AutoNex.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -180,6 +181,7 @@ public class ExchangeRatesController : ControllerBase
     [HttpGet("live/{currency}")]
     public async Task<IActionResult> GetLiveRate(string currency)
     {
+        _rateService.ClearCache();
         var value = await _rateService.GetLatestValueByCodeAsync(currency);
         if (value == null) return NotFound();
         return Ok(new { currency = currency.ToUpper(), value });
@@ -224,15 +226,6 @@ public class ExchangeRatesController : ControllerBase
                 l.Id, l.ValueDate, l.RatesJson, l.IsSuccess,
                 l.Error, l.Action, l.FetchedBy, l.FetchedAt))
             .FirstOrDefaultAsync();
-
-        if (lastLog?.Action?.EndsWith("_Inserted") == true)
-        {
-            var setting = await _db.Settings.FirstAsync(s => s.Key == "bcv_retry_enabled");
-            setting.Value = "false";
-            setting.UpdatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("BCV retry desactivado tras insert manual exitoso");
-        }
 
         return Ok(lastLog);
     }
@@ -283,18 +276,49 @@ public class ExchangeRatesController : ControllerBase
     [HttpPost("autoupdate-bcv/toggle")]
     public async Task<IActionResult> ToggleAutoConsult()
     {
-        var setting = await _db.Settings.FirstAsync(s => s.Key == "bcv_auto_consult");
-        setting.Value = setting.Value == "true" ? "false" : "true";
-        setting.UpdatedAt = DateTime.UtcNow;
+        var setting = await _db.Settings.FirstOrDefaultAsync(s => s.Key == "bcv_auto_consult");
+        if (setting is null)
+        {
+            setting = new Setting
+            {
+                Key = "bcv_auto_consult",
+                Value = "true",
+                Type = "boolean",
+                Description = "Activa la consulta automática al BCV",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            };
+            _db.Settings.Add(setting);
+        }
+        else
+        {
+            setting.Value = setting.Value == "true" ? "false" : "true";
+            setting.UpdatedAt = DateTime.UtcNow;
+        }
         await _db.SaveChangesAsync();
 
         var isActive = setting.Value == "true";
 
-        if (isActive)
+        var retrySetting = await _db.Settings.FirstOrDefaultAsync(s => s.Key == "bcv_retry_enabled");
+        if (retrySetting is null)
         {
-            var scheduler = await _schedulerFactory.GetScheduler();
-            await scheduler.TriggerJob(new JobKey("bcv-fetch"));
+            retrySetting = new Setting
+            {
+                Key = "bcv_retry_enabled",
+                Value = isActive ? "true" : "false",
+                Type = "boolean",
+                Description = "Activa los reintentos automáticos cada 10 min si el BCV no ha publicado",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            };
+            _db.Settings.Add(retrySetting);
         }
+        else
+        {
+            retrySetting.Value = isActive ? "true" : "false";
+            retrySetting.UpdatedAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync();
 
         return Ok(new { bcv_auto_consult = isActive });
     }

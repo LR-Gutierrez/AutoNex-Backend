@@ -142,14 +142,9 @@ builder.Services.AddQuartz(q =>
         .WithCronSchedule("0 0 0 ? * *", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 
-    q.AddJob<BcvAuditJob>(j => j.WithIdentity("bcv-audit"));
-    q.AddTrigger(t => t.ForJob("bcv-audit")
-        .WithCronSchedule("0 0 18 ? * *", s =>
-            s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
-
     q.AddJob<BcvRetryJob>(j => j.WithIdentity("bcv-retry"));
     q.AddTrigger(t => t.ForJob("bcv-retry")
-        .WithCronSchedule("0 0/10 18-23 ? * *", s =>
+        .WithCronSchedule("0 0/10 4-23 ? * *", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 });
 builder.Services.AddQuartzHostedService(options =>
@@ -196,26 +191,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
 
-    if (!context.Users.Any())
-    {
-        var seedSettings = scope.ServiceProvider.GetRequiredService<IOptions<SeedSettings>>();
-        foreach (var seedUser in seedSettings.Value.Users)
-        {
-            var role = Enum.Parse<UserRole>(seedUser.Role);
-            var user = new User
-            {
-                FullName = seedUser.FullName,
-                Email = seedUser.Email.ToLowerInvariant().Trim(),
-                PasswordHash = PasswordHelper.Hash(seedUser.Password),
-                Role = role,
-                IsActive = true
-            };
-            context.Users.Add(user);
-        }
-        await context.SaveChangesAsync();
-    }
-
-    await AppDbSeeder.SeedAsync(context);
+    var seedSettings = scope.ServiceProvider.GetRequiredService<IOptions<SeedSettings>>();
+    await AppDbSeeder.SeedAsync(context, seedSettings);
 }
 
 if (app.Environment.IsDevelopment())

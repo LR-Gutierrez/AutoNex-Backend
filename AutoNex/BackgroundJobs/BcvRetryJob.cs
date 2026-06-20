@@ -29,6 +29,17 @@ public class BcvRetryJob : IJob
         var scraper = scope.ServiceProvider.GetRequiredService<IBcvScraperService>();
         var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<ExchangeRateHub>>();
 
+        var autoEnabled = await db.Settings
+            .Where(s => s.Key == "bcv_auto_consult")
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync(context.CancellationToken);
+
+        if (autoEnabled != "true")
+        {
+            _logger.LogInformation("BCV auto-consulta desactivada, saltando reintento");
+            return;
+        }
+
         var retryEnabled = await db.Settings
             .Where(s => s.Key == "bcv_retry_enabled")
             .Select(s => s.Value)
@@ -45,11 +56,13 @@ public class BcvRetryJob : IJob
         var todayVetUtc = TimeZoneInfo.ConvertTimeToUtc(todayVet, VetZone);
         var hourVet = nowVet.Hour;
         var minuteVet = nowVet.Minute;
+        var dayVet = nowVet.DayOfWeek;
 
-        // Only run from 6:00 PM to 11:50 PM VET
-        if (hourVet < 18)
+        var isWeekday = dayVet >= DayOfWeek.Monday && dayVet <= DayOfWeek.Friday;
+
+        if (isWeekday && (hourVet < 16 || (hourVet == 16 && minuteVet < 20)))
         {
-            _logger.LogInformation("BCV retry fuera de ventana horaria (6pm-11:50pm VET)");
+            _logger.LogInformation("BCV retry fuera de ventana horaria weekday (desde 4:20pm VET)");
             db.BcvFetchLogs.Add(new Models.BcvFetchLog
             {
                 ValueDate = todayVetUtc,

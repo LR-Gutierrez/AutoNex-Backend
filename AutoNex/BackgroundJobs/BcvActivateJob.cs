@@ -14,6 +14,8 @@ public class BcvActivateJob : IJob
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BcvActivateJob> _logger;
 
+    private static readonly TimeZoneInfo VetZone = TimeZoneInfo.FindSystemTimeZoneById("America/Caracas");
+
     public BcvActivateJob(IServiceScopeFactory scopeFactory, ILogger<BcvActivateJob> logger)
     {
         _scopeFactory = scopeFactory;
@@ -35,6 +37,17 @@ public class BcvActivateJob : IJob
         if (authorized == null)
         {
             _logger.LogInformation("No hay boletines autorizados para activar");
+            return;
+        }
+
+        var nowVet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VetZone);
+        var todayVet = nowVet.Date;
+        var todayVetUtc = TimeZoneInfo.ConvertTimeToUtc(todayVet, VetZone);
+
+        if (authorized.ValueDate.Date > todayVetUtc.Date)
+        {
+            _logger.LogInformation("Boletín #{NewsletterId} tiene ValueDate futuro ({ValueDate}), se activará en su fecha",
+                authorized.Id, authorized.ValueDate);
             return;
         }
 
@@ -69,5 +82,11 @@ public class BcvActivateJob : IJob
         }
 
         _logger.LogInformation("Boletín #{NewsletterId} activado", authorized.Id);
+
+        var retrySetting = await db.Settings.FirstAsync(s => s.Key == "bcv_retry_enabled", context.CancellationToken);
+        retrySetting.Value = "true";
+        retrySetting.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(context.CancellationToken);
+        _logger.LogInformation("BCV retry activado tras publicación");
     }
 }
