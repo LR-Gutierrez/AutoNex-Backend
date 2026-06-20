@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoNex.Data;
 using AutoNex.Enums;
 using AutoNex.Hubs;
@@ -39,35 +40,80 @@ public class BcvFetchJob : IJob
             return;
         }
 
-        var result = await scraper.FetchCurrentRatesAsync(context.CancellationToken);
+        await ExecuteFetchAsync(db, scraper, hubContext, "Auto", _logger, context.CancellationToken);
+    }
+
+    public static async Task<string> ExecuteFetchAsync(AppDbContext db, IBcvScraperService scraper,
+        IHubContext<ExchangeRateHub> hubContext, string fetchedBy, ILogger logger,
+        CancellationToken ct = default)
+    {
+        var result = await scraper.FetchCurrentRatesAsync(ct);
+
         if (!result.IsSuccess)
         {
-            _logger.LogError("Fallo BCV fetch: {Error}", result.Error);
-            return;
+            db.BcvFetchLogs.Add(new BcvFetchLog
+            {
+                ValueDate = DateTime.UtcNow,
+                IsSuccess = false,
+                Error = result.Error,
+                Action = $"{fetchedBy}_Failed",
+                FetchedBy = fetchedBy,
+                FetchedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync(ct);
+            logger.LogError("{FetchedBy} BCV fetch falló: {Error}", fetchedBy, result.Error);
+            return $"{fetchedBy}_Failed";
         }
 
-        var dateString = result.ValueDate!.Value.ToUniversalTime().Date;
-        var exists = await db.CurrencyNewsletters
-            .AnyAsync(n => n.ValueDate.Date == dateString
-                        && n.Status == NewsletterStatus.Draft
-                        && n.IsActive, context.CancellationToken);
+        var valueDate = result.ValueDate!.Value.ToUniversalTime().Date;
+        var ratesJson = JsonSerializer.Serialize(result.Rates);
 
-        if (exists)
+        var alreadyPublished = await db.CurrencyNewsletters
+            .AnyAsync(n => n.ValueDate.Date == valueDate
+                        && n.Status == NewsletterStatus.Published
+                        && n.IsActive, ct);
+
+        if (alreadyPublished)
         {
-            await db.CurrencyNewsletters
-                .Where(n => n.ValueDate.Date == dateString
-                         && n.Status == NewsletterStatus.Draft
-                         && n.IsActive)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(n => n.IsActive, false)
-                    .SetProperty(n => n.Observations, n => n.Observations + " (reemplazado)"),
-                    context.CancellationToken);
+            db.BcvFetchLogs.Add(new BcvFetchLog
+            {
+                ValueDate = valueDate,
+                RatesJson = ratesJson,
+                IsSuccess = true,
+                Action = $"{fetchedBy}_Skipped_AlreadyPublished",
+                FetchedBy = fetchedBy,
+                FetchedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("{FetchedBy} BCV fetch omitido — ya hay Publicado para {ValueDate}", fetchedBy, valueDate);
+            return $"{fetchedBy}_Skipped_AlreadyPublished";
+        }
+
+        var existingDraft = await db.CurrencyNewsletters
+            .AnyAsync(n => n.ValueDate.Date == valueDate
+                        && n.Status == NewsletterStatus.Draft
+                        && n.IsActive, ct);
+
+        if (existingDraft)
+        {
+            db.BcvFetchLogs.Add(new BcvFetchLog
+            {
+                ValueDate = valueDate,
+                RatesJson = ratesJson,
+                IsSuccess = true,
+                Action = $"{fetchedBy}_Skipped_AlreadyDraft",
+                FetchedBy = fetchedBy,
+                FetchedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("{FetchedBy} BCV fetch omitido — ya hay Draft para {ValueDate}", fetchedBy, valueDate);
+            return $"{fetchedBy}_Skipped_AlreadyDraft";
         }
 
         var newsletter = new CurrencyNewsletter
         {
             PublishedAt = DateTime.UtcNow,
-            ValueDate = result.ValueDate!.Value.ToUniversalTime(),
+            ValueDate = valueDate,
             Observations = "Sincronización oficial BCV.",
             CreatedBy = 1,
             IpAddress = "127.0.0.1",
@@ -77,20 +123,20 @@ public class BcvFetchJob : IJob
             UpdatedAt = DateTime.UtcNow
         };
         db.CurrencyNewsletters.Add(newsletter);
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(ct);
 
-        foreach (var (iso, value) in result.Rates)
+        foreach (var (iso, rate) in result.Rates)
         {
             var currencyId = await db.Currencies
                 .Where(c => c.IsoCode == iso)
                 .Select(c => c.Id)
-                .FirstOrDefaultAsync(context.CancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (currencyId > 0)
             {
                 db.ExchangeRates.Add(new ExchangeRate
                 {
-                    Value = value,
+                    Value = rate,
                     CurrencyId = currencyId,
                     CurrencyNewsletterId = newsletter.Id,
                     CreatedBy = 1,
@@ -98,12 +144,22 @@ public class BcvFetchJob : IJob
                 });
             }
         }
-        await db.SaveChangesAsync(context.CancellationToken);
+
+        db.BcvFetchLogs.Add(new BcvFetchLog
+        {
+            ValueDate = valueDate,
+            RatesJson = ratesJson,
+            IsSuccess = true,
+            Action = $"{fetchedBy}_Inserted",
+            FetchedBy = fetchedBy,
+            FetchedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync(ct);
 
         await hubContext.Clients.Group("exchange-updates")
-            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id },
-                context.CancellationToken);
+            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id }, ct);
 
-        _logger.LogInformation("Nuevo draft BCV creado: #{NewsletterId}", newsletter.Id);
+        logger.LogInformation("{FetchedBy} BCV nuevo Draft #{NewsletterId} para {ValueDate}", fetchedBy, newsletter.Id, valueDate);
+        return $"{fetchedBy}_Inserted";
     }
 }

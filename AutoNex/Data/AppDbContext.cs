@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<CurrencyNewsletter> CurrencyNewsletters => Set<CurrencyNewsletter>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<BcvFetchLog> BcvFetchLogs => Set<BcvFetchLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,3 +1,4 @@
+using AutoNex.BackgroundJobs;
 using AutoNex.Data;
 using AutoNex.DTOs.ExchangeRates;
 using AutoNex.Enums;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Quartz;
 
 namespace AutoNex.Controllers;
 
@@ -18,15 +20,20 @@ public class ExchangeRatesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IExchangeRateService _rateService;
     private readonly IHubContext<ExchangeRateHub> _hubContext;
+    private readonly ISchedulerFactory _schedulerFactory;
     private readonly IBcvScraperService _scraper;
+    private readonly ILogger<ExchangeRatesController> _logger;
 
     public ExchangeRatesController(AppDbContext db, IExchangeRateService rateService,
-        IHubContext<ExchangeRateHub> hubContext, IBcvScraperService scraper)
+        IHubContext<ExchangeRateHub> hubContext, ISchedulerFactory schedulerFactory,
+        IBcvScraperService scraper, ILogger<ExchangeRatesController> logger)
     {
         _db = db;
         _rateService = rateService;
         _hubContext = hubContext;
+        _schedulerFactory = schedulerFactory;
         _scraper = scraper;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -209,75 +216,68 @@ public class ExchangeRatesController : ControllerBase
     [HttpPost("bcv-fetch")]
     public async Task<IActionResult> BcvFetch()
     {
-        var result = await _scraper.FetchCurrentRatesAsync();
-        if (!result.IsSuccess)
-            return BadRequest(new { message = "Error al consultar BCV", error = result.Error });
-
-        var dateString = result.ValueDate!.Value.ToUniversalTime().Date;
-        var exists = await _db.CurrencyNewsletters
-            .AnyAsync(n => n.ValueDate.Date == dateString
-                        && n.Status == NewsletterStatus.Draft
-                        && n.IsActive);
-
-        if (exists)
-        {
-            await _db.CurrencyNewsletters
-                .Where(n => n.ValueDate.Date == dateString
-                         && n.Status == NewsletterStatus.Draft
-                         && n.IsActive)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(n => n.IsActive, false)
-                    .SetProperty(n => n.Observations,
-                        n => n.Observations + " (reemplazado)"));
-        }
-
-        var newsletter = new Models.CurrencyNewsletter
-        {
-            PublishedAt = DateTime.UtcNow,
-            ValueDate = result.ValueDate!.Value.ToUniversalTime(),
-            Observations = "Sincronización manual BCV.",
-            CreatedBy = 1,
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
-            IsActive = true,
-            Status = NewsletterStatus.Draft,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        _db.CurrencyNewsletters.Add(newsletter);
-        await _db.SaveChangesAsync();
-
-        foreach (var (iso, value) in result.Rates)
-        {
-            var currencyId = await _db.Currencies
-                .Where(c => c.IsoCode == iso)
-                .Select(c => c.Id)
-                .FirstOrDefaultAsync();
-
-            if (currencyId > 0)
-            {
-                _db.ExchangeRates.Add(new Models.ExchangeRate
-                {
-                    Value = value,
-                    CurrencyId = currencyId,
-                    CurrencyNewsletterId = newsletter.Id,
-                    CreatedBy = 1,
-                    IpAddress = newsletter.IpAddress
-                });
-            }
-        }
-        await _db.SaveChangesAsync();
-
-        await _hubContext.Clients.Group("exchange-updates")
-            .SendAsync("ExchangeRatePublished", new { newsletterId = newsletter.Id });
-
-        var dto = await _db.CurrencyNewsletters
+        await BcvFetchJob.ExecuteFetchAsync(_db, _scraper, _hubContext, "Manual", _logger);
+        var lastLog = await _db.BcvFetchLogs
             .AsNoTracking()
-            .Include(n => n.ExchangeRates).ThenInclude(r => r.Currency)
-            .Where(n => n.Id == newsletter.Id)
-            .Select(n => n.ToDto())
-            .FirstAsync();
+            .OrderByDescending(l => l.Id)
+            .Select(l => new BcvFetchLogResponse(
+                l.Id, l.ValueDate, l.RatesJson, l.IsSuccess,
+                l.Error, l.Action, l.FetchedBy, l.FetchedAt))
+            .FirstOrDefaultAsync();
 
-        return Ok(dto);
+        if (lastLog?.Action?.EndsWith("_Inserted") == true)
+        {
+            var setting = await _db.Settings.FirstAsync(s => s.Key == "bcv_retry_enabled");
+            setting.Value = "false";
+            setting.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("BCV retry desactivado tras insert manual exitoso");
+        }
+
+        return Ok(lastLog);
+    }
+
+    [HttpGet("fetch-logs")]
+    public async Task<IActionResult> GetFetchLogs([FromQuery] int page = 1, [FromQuery] int perPage = 20)
+    {
+        var query = _db.BcvFetchLogs.AsNoTracking().OrderByDescending(l => l.FetchedAt);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * perPage)
+            .Take(perPage)
+            .Select(l => new BcvFetchLogResponse(
+                l.Id, l.ValueDate, l.RatesJson, l.IsSuccess,
+                l.Error, l.Action, l.FetchedBy, l.FetchedAt))
+            .ToListAsync();
+
+        return Ok(new { data = items, total, page, perPage });
+    }
+
+    [HttpGet("autoupdate-bcv/status")]
+    public async Task<IActionResult> GetAutoConsultStatus()
+    {
+        var settings = await _db.Settings
+            .AsNoTracking()
+            .Where(s => s.Key == "bcv_auto_consult" || s.Key == "bcv_retry_enabled")
+            .ToListAsync();
+
+        DateTime? nextRetryUtc = null;
+        try
+        {
+            var scheduler = await _schedulerFactory.GetScheduler();
+            var triggers = await scheduler.GetTriggersOfJob(new JobKey("bcv-retry"));
+            var next = triggers.MinBy(t => t.GetNextFireTimeUtc())?.GetNextFireTimeUtc();
+            nextRetryUtc = next?.UtcDateTime;
+        }
+        catch { /* scheduler not available */ }
+
+        return Ok(new
+        {
+            bcv_auto_consult = settings.FirstOrDefault(s => s.Key == "bcv_auto_consult")?.Value == "true",
+            bcv_retry_enabled = settings.FirstOrDefault(s => s.Key == "bcv_retry_enabled")?.Value == "true",
+            nextRetryUtc,
+        });
     }
 
     [HttpPost("autoupdate-bcv/toggle")]
@@ -288,6 +288,14 @@ public class ExchangeRatesController : ControllerBase
         setting.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        return Ok(new { bcv_auto_consult = setting.Value == "true" });
+        var isActive = setting.Value == "true";
+
+        if (isActive)
+        {
+            var scheduler = await _schedulerFactory.GetScheduler();
+            await scheduler.TriggerJob(new JobKey("bcv-fetch"));
+        }
+
+        return Ok(new { bcv_auto_consult = isActive });
     }
 }

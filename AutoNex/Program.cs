@@ -146,6 +146,11 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(t => t.ForJob("bcv-audit")
         .WithCronSchedule("0 0 18 ? * *", s =>
             s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
+
+    q.AddJob<BcvRetryJob>(j => j.WithIdentity("bcv-retry"));
+    q.AddTrigger(t => t.ForJob("bcv-retry")
+        .WithCronSchedule("0 0/10 18-23 ? * *", s =>
+            s.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("America/Caracas"))));
 });
 builder.Services.AddQuartzHostedService(options =>
 {

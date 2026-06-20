@@ -23,7 +23,8 @@ public static class AppDbSeeder
                 new Setting { Key = "bcv_auto_consult", Value = "false", Type = "boolean", Description = "Activa la consulta automática al BCV" },
                 new Setting { Key = "bcv_update_cron", Value = "10 16 * * 1-5", Type = "string", Description = "Lun-Vie 4:10 PM VET" },
                 new Setting { Key = "bcv_audit_enabled", Value = "true", Type = "boolean", Description = "Activa la auditoría diaria de tasas" },
-                new Setting { Key = "bcv_audit_cron", Value = "0 18 * * *", Type = "string", Description = "6:00 PM VET" }
+                new Setting { Key = "bcv_audit_cron", Value = "0 18 * * *", Type = "string", Description = "6:00 PM VET" },
+                new Setting { Key = "bcv_retry_enabled", Value = "true", Type = "boolean", Description = "Activa los reintentos automáticos cada 10 min si el BCV no ha publicado" }
             );
         }
 
