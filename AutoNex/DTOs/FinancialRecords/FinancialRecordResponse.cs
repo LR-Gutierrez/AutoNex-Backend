@@ -6,6 +6,7 @@ public record FinancialRecordResponse(
     int Id,
     FinancialRecordType Type,
     FinancialCategory Category,
+    AccountType AccountType,
     decimal Amount,
     decimal? AmountInBs,
     decimal? ExchangeRateValue,

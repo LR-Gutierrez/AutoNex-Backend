@@ -157,6 +157,7 @@ public static class MappingExtensions
             record.Id,
             record.Type,
             record.Category,
+            record.AccountType,
             record.Amount,
             record.AmountInBs,
             record.ExchangeRateValue,

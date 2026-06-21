@@ -177,6 +177,46 @@ public class ExchangeRatesController : ControllerBase
         return Ok(new { message = "Boletín autorizado correctamente" });
     }
 
+    [HttpPost("{id}/publish")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Publish(int id)
+    {
+        var newsletter = await _db.CurrencyNewsletters.FindAsync(id);
+        if (newsletter == null) return NotFound();
+
+        if (newsletter.Status != NewsletterStatus.Authorized)
+            return BadRequest("Solo se pueden publicar boletines en estado Authorized");
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        await _db.CurrencyNewsletters
+            .Where(n => n.Status == NewsletterStatus.Published && n.IsActive)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(n => n.Status, NewsletterStatus.Historical)
+                .SetProperty(n => n.UpdatedAt, DateTime.UtcNow));
+
+        newsletter.Status = NewsletterStatus.Published;
+        newsletter.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        await transaction.CommitAsync();
+
+        _rateService.ClearCache();
+
+        var usdRate = await _rateService.GetLatestValueByCodeAsync("USD");
+
+        await _hubContext.Clients.Group("exchange-updates")
+            .SendAsync("ExchangeRateInEffect", new { newsletterId = id });
+
+        if (usdRate.HasValue)
+        {
+            await _hubContext.Clients.Group("exchange-rates-public")
+                .SendAsync("PublicExchangeRate", new { currency = "USD", value = usdRate.Value });
+        }
+
+        return Ok(new { message = "Boletín publicado en vigencia correctamente" });
+    }
+
     [AllowAnonymous]
     [HttpGet("live/{currency}")]
     public async Task<IActionResult> GetLiveRate(string currency)

@@ -307,10 +307,15 @@ public class ServiceOrderService : IServiceOrderService
             amountInBs = request.AmountInBs;
         }
 
+        var accountType = request.PaymentMethod is PaymentMethod.EfectivoDolares
+            ? AccountType.Dolares
+            : AccountType.Bolivares;
+
         var record = new FinancialRecord
         {
             Type = FinancialRecordType.Income,
             Category = FinancialCategory.Services,
+            AccountType = accountType,
             Amount = amountInUsd,
             AmountInBs = amountInBs,
             ExchangeRateValue = exchangeRateValue,

@@ -10,10 +10,12 @@ namespace AutoNex.Services.Implementations;
 public class DashboardService : IDashboardService
 {
     private readonly AppDbContext _context;
+    private readonly IExchangeRateService _exchangeRateService;
 
-    public DashboardService(AppDbContext context)
+    public DashboardService(AppDbContext context, IExchangeRateService exchangeRateService)
     {
         _context = context;
+        _exchangeRateService = exchangeRateService;
     }
 
     public async Task<DashboardResponse> GetDashboardAsync(DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
@@ -90,15 +92,39 @@ public class DashboardService : IDashboardService
             .Where(r => r.Date >= start && r.Date < end)
             .ToListAsync(cancellationToken);
 
-        var income = records.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
-        var expenses = records.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+        var bolivaresIncomeInBs = records.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Income).Sum(r => r.AmountInBs ?? r.Amount);
+        var bolivaresExpensesInBs = records.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Expense).Sum(r => r.AmountInBs ?? r.Amount);
+        var dolaresIncome = records.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
+        var dolaresExpenses = records.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+
+        var rate = await _exchangeRateService.GetLatestValueByCodeAsync("USD", cancellationToken).ConfigureAwait(false);
+        decimal totalIncome;
+        decimal totalExpenses;
+
+        if (rate.HasValue && rate.Value > 0)
+        {
+            totalIncome = dolaresIncome + bolivaresIncomeInBs / rate.Value;
+            totalExpenses = dolaresExpenses + bolivaresExpensesInBs / rate.Value;
+        }
+        else
+        {
+            totalIncome = records.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
+            totalExpenses = records.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+        }
+
+        var balances = new List<AccountBalanceDto>
+        {
+            new(AccountType.Bolivares, bolivaresIncomeInBs - bolivaresExpensesInBs, "Bs."),
+            new(AccountType.Dolares, dolaresIncome - dolaresExpenses, "USD"),
+        };
 
         return new FinancialSummaryResponse(
-            income,
-            expenses,
-            income - expenses,
+            totalIncome,
+            totalExpenses,
+            totalIncome - totalExpenses,
             records.Count(r => r.Type == FinancialRecordType.Income),
-            records.Count(r => r.Type == FinancialRecordType.Expense)
+            records.Count(r => r.Type == FinancialRecordType.Expense),
+            balances
         );
     }
 
@@ -136,12 +162,36 @@ public class DashboardService : IDashboardService
             );
 
             var periodRecords = allFinancialRecords.Where(r => r.Date >= start && r.Date < end).ToList();
-            var income = periodRecords.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
-            var expenses = periodRecords.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+            var bolivaresIncomeInBs = periodRecords.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Income).Sum(r => r.AmountInBs ?? r.Amount);
+            var bolivaresExpensesInBs = periodRecords.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Expense).Sum(r => r.AmountInBs ?? r.Amount);
+            var dolaresIncome = periodRecords.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
+            var dolaresExpenses = periodRecords.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+
+            var rate = await _exchangeRateService.GetLatestValueByCodeAsync("USD", cancellationToken).ConfigureAwait(false);
+            decimal totalIncome;
+            decimal totalExpenses;
+
+            if (rate.HasValue && rate.Value > 0)
+            {
+                totalIncome = dolaresIncome + bolivaresIncomeInBs / rate.Value;
+                totalExpenses = dolaresExpenses + bolivaresExpensesInBs / rate.Value;
+            }
+            else
+            {
+                totalIncome = periodRecords.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount);
+                totalExpenses = periodRecords.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount);
+            }
+
+            var balances = new List<AccountBalanceDto>
+            {
+                new(AccountType.Bolivares, bolivaresIncomeInBs - bolivaresExpensesInBs, "Bs."),
+                new(AccountType.Dolares, dolaresIncome - dolaresExpenses, "USD"),
+            };
             var financialSummary = new FinancialSummaryResponse(
-                income, expenses, income - expenses,
+                totalIncome, totalExpenses, totalIncome - totalExpenses,
                 periodRecords.Count(r => r.Type == FinancialRecordType.Income),
-                periodRecords.Count(r => r.Type == FinancialRecordType.Expense)
+                periodRecords.Count(r => r.Type == FinancialRecordType.Expense),
+                balances
             );
 
             result[name] = new DashboardResponse(ordersSummary, lowStock, alerts, financialSummary);

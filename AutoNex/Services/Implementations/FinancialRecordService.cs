@@ -66,6 +66,7 @@ public class FinancialRecordService : IFinancialRecordService
         {
             Type = request.Type,
             Category = request.Category,
+            AccountType = request.AccountType,
             Amount = request.Amount,
             Description = request.Description,
             Date = ToUtc(request.Date) ?? request.Date,
@@ -87,6 +88,7 @@ public class FinancialRecordService : IFinancialRecordService
 
         record.Type = request.Type;
         record.Category = request.Category;
+        record.AccountType = request.AccountType;
         record.Amount = request.Amount;
         record.Description = request.Description;
         record.Date = ToUtc(request.Date) ?? request.Date;
@@ -124,12 +126,24 @@ public class FinancialRecordService : IFinancialRecordService
         var incomeCount = await query.Where(r => r.Type == FinancialRecordType.Income).CountAsync(cancellationToken).ConfigureAwait(false);
         var expenseCount = await query.Where(r => r.Type == FinancialRecordType.Expense).CountAsync(cancellationToken).ConfigureAwait(false);
 
+        var bolivaresIncome = await query.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)(r.AmountInBs ?? r.Amount), cancellationToken).ConfigureAwait(false) ?? 0;
+        var bolivaresExpenses = await query.Where(r => r.AccountType == AccountType.Bolivares && r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)(r.AmountInBs ?? r.Amount), cancellationToken).ConfigureAwait(false) ?? 0;
+        var dolaresIncome = await query.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Income).SumAsync(r => (decimal?)r.Amount, cancellationToken).ConfigureAwait(false) ?? 0;
+        var dolaresExpenses = await query.Where(r => r.AccountType == AccountType.Dolares && r.Type == FinancialRecordType.Expense).SumAsync(r => (decimal?)r.Amount, cancellationToken).ConfigureAwait(false) ?? 0;
+
+        var balances = new List<AccountBalanceDto>
+        {
+            new(AccountType.Bolivares, bolivaresIncome - bolivaresExpenses, "Bs."),
+            new(AccountType.Dolares, dolaresIncome - dolaresExpenses, "USD"),
+        };
+
         return new FinancialSummaryResponse(
             incomeSum,
             expenseSum,
             incomeSum - expenseSum,
             incomeCount,
-            expenseCount
+            expenseCount,
+            balances
         );
     }
 

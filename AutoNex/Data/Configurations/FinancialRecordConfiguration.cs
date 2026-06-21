@@ -24,6 +24,12 @@ public class FinancialRecordConfiguration : IEntityTypeConfiguration<FinancialRe
             .HasConversion<string>()
             .HasMaxLength(50);
 
+        builder.Property(r => r.AccountType)
+            .HasColumnName("account_type")
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.Property(r => r.Amount)
             .HasColumnName("amount")
             .HasPrecision(18, 2);
