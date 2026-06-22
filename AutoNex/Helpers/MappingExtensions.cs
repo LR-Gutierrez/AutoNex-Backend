@@ -11,6 +11,7 @@ using AutoNex.DTOs.Tools;
 using AutoNex.DTOs.Users;
 using AutoNex.DTOs.Vehicles;
 using AutoNex.Models;
+using AutoNex.Services.Implementations;
 
 namespace AutoNex.Helpers;
 
@@ -171,7 +172,16 @@ public static class MappingExtensions
     public static MileageAlertResponse ToResponse(this MileageAlert alert, int currentKm)
     {
         var remainingKm = alert.NextAlertKm - currentKm;
-        var isDue = alert.IsActive && currentKm + (alert.EstimatedWeeklyKm * 2) >= alert.NextAlertKm;
+        var margin = MileageAlertService.WarningWeeksMargin;
+        var isDue = alert.IsActive && (
+            alert.NextAlertDate != null && DateTime.UtcNow >= alert.NextAlertDate
+            ||
+            currentKm + (alert.EstimatedWeeklyKm * margin) >= alert.NextAlertKm
+        );
+
+        int? warningKm = alert.Service?.MinKmInterval is not null
+            ? alert.NextAlertKm - alert.Service.MinKmInterval.Value
+            : (int?)null;
 
         return new MileageAlertResponse(
             alert.Id,
@@ -183,9 +193,14 @@ public static class MappingExtensions
             alert.EstimatedWeeklyKm,
             alert.NextAlertKm,
             remainingKm > 0 ? remainingKm : 0,
+            warningKm is not null && warningKm > 0 ? (int?)warningKm : null,
             isDue,
             alert.LastAlertDate,
             alert.NextAlertDate,
+            alert.Service?.MinKmInterval,
+            alert.Service?.MaxKmInterval,
+            alert.Service?.MinMonth,
+            alert.Service?.MaxMonth,
             alert.IsActive,
             alert.CreatedAt
         );

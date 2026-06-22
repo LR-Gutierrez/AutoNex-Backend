@@ -53,7 +53,12 @@ public class VehicleService : IVehicleService
                 o.Date,
                 o.Status.ToString(),
                 o.TotalAmount,
-                o.CurrentKm
+                o.CurrentKm,
+                o.ApplyLaborPercentage,
+                o.LaborPercentage,
+                o.ApplyLaborPercentage && o.LaborPercentage != null
+                    ? o.TotalAmount - o.Items.Sum(i => i.UnitPrice * i.Quantity)
+                    : null
             ))
             .ToListAsync(cancellationToken);
 

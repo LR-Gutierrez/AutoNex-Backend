@@ -5,5 +5,8 @@ public record ServiceOrderBriefResponse(
     DateTime Date,
     string Status,
     decimal TotalAmount,
-    int CurrentKm
+    int CurrentKm,
+    bool ApplyLaborPercentage,
+    decimal? LaborPercentage,
+    decimal? LaborCharge
 );

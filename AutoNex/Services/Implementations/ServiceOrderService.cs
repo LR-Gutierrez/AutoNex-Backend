@@ -83,6 +83,8 @@ public class ServiceOrderService : IServiceOrderService
             CurrentKm = request.CurrentKm,
             EstimatedDailyKm = request.EstimatedDailyKm,
             DaysPerWeek = request.DaysPerWeek,
+            ApplyLaborPercentage = request.ApplyLaborPercentage,
+            LaborPercentage = request.ApplyLaborPercentage ? request.LaborPercentage : null,
             Notes = request.Notes,
             Status = ServiceOrderStatus.Open
         };
@@ -123,6 +125,9 @@ public class ServiceOrderService : IServiceOrderService
             total += itemReq.UnitPrice * itemReq.Quantity;
         }
 
+        if (request.ApplyLaborPercentage && request.LaborPercentage.HasValue)
+            total += total * request.LaborPercentage.Value / 100m;
+
         order.TotalAmount = total;
 
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -131,10 +136,7 @@ public class ServiceOrderService : IServiceOrderService
             _context.ServiceOrders.Add(order);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
-            {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
-            }
+            await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -178,6 +180,8 @@ public class ServiceOrderService : IServiceOrderService
         order.CurrentKm = request.CurrentKm;
         order.EstimatedDailyKm = request.EstimatedDailyKm;
         order.DaysPerWeek = request.DaysPerWeek;
+        order.ApplyLaborPercentage = request.ApplyLaborPercentage;
+        order.LaborPercentage = request.ApplyLaborPercentage ? request.LaborPercentage : null;
         order.Notes = request.Notes;
 
         decimal total = 0;
@@ -216,6 +220,9 @@ public class ServiceOrderService : IServiceOrderService
             total += itemReq.UnitPrice * itemReq.Quantity;
         }
 
+        if (request.ApplyLaborPercentage && request.LaborPercentage.HasValue)
+            total += total * request.LaborPercentage.Value / 100m;
+
         order.TotalAmount = total;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -224,10 +231,7 @@ public class ServiceOrderService : IServiceOrderService
         {
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            if (order.EstimatedDailyKm.HasValue && order.DaysPerWeek.HasValue)
-            {
-                await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
-            }
+            await _mileageAlertService.CreateOrUpdateFromOrderAsync(order.Id, cancellationToken).ConfigureAwait(false);
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -350,6 +354,11 @@ public class ServiceOrderService : IServiceOrderService
 
     private static ServiceOrderResponse MapToResponse(ServiceOrder order)
     {
+        var itemsSubtotal = order.Items.Sum(i => i.UnitPrice * i.Quantity);
+        decimal? laborCharge = order.ApplyLaborPercentage && order.LaborPercentage.HasValue
+            ? itemsSubtotal * order.LaborPercentage.Value / 100m
+            : null;
+
         return new ServiceOrderResponse(
             order.Id,
             order.VehicleId,
@@ -364,6 +373,9 @@ public class ServiceOrderService : IServiceOrderService
             order.Date,
             order.Status,
             order.TotalAmount,
+            order.ApplyLaborPercentage,
+            order.LaborPercentage,
+            laborCharge,
             order.Notes,
             order.PaymentMethod,
             order.OperationNumber,

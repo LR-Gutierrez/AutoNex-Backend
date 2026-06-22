@@ -57,6 +57,10 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             .HasColumnName("exchange_rate_value")
             .HasPrecision(18, 8);
 
+        builder.Property(o => o.ApplyLaborPercentage).HasColumnName("apply_labor_percentage");
+        builder.Property(o => o.LaborPercentage)
+            .HasColumnName("labor_percentage")
+            .HasPrecision(5, 2);
         builder.Property(o => o.IsDeleted).HasColumnName("is_deleted");
         builder.Property(o => o.CreatedAt).HasColumnName("created_at");
         builder.Property(o => o.UpdatedAt).HasColumnName("updated_at");

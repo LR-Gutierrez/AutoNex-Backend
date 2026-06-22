@@ -40,16 +40,22 @@ public class MileageAlertBackgroundService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-        var dueAlerts = await context.MileageAlerts
+        var alerts = await context.MileageAlerts
             .Include(a => a.Vehicle)
+            .Include(a => a.Service)
             .Where(a => a.IsActive && !a.Vehicle.IsDeleted)
-            .Where(a => a.NextAlertDate != null && DateTime.UtcNow >= a.NextAlertDate
-                || context.ServiceOrders
-                    .Where(o => o.VehicleId == a.VehicleId && o.Status != Enums.ServiceOrderStatus.Cancelled)
-                    .OrderByDescending(o => o.Date)
-                    .Select(o => o.CurrentKm)
-                    .FirstOrDefault() + (a.EstimatedWeeklyKm * 2) >= a.NextAlertKm)
             .ToListAsync(stoppingToken);
+
+        var vehicleIds = alerts.Select(a => a.VehicleId).Distinct().ToList();
+        var latestKms = await GetLatestKmBatchAsync(context, vehicleIds, stoppingToken);
+
+        var dueAlerts = alerts
+            .Where(a => MileageAlertService.IsDue(
+                a.NextAlertDate,
+                latestKms.GetValueOrDefault(a.VehicleId, 0),
+                a.EstimatedWeeklyKm,
+                a.NextAlertKm))
+            .ToList();
 
         foreach (var alert in dueAlerts)
         {
@@ -67,5 +73,24 @@ public class MileageAlertBackgroundService : BackgroundService
         }
 
         await context.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+    }
+
+    private static async Task<Dictionary<int, int>> GetLatestKmBatchAsync(AppDbContext context, List<int> vehicleIds, CancellationToken cancellationToken)
+    {
+        if (vehicleIds.Count == 0) return [];
+
+        var latest = await context.ServiceOrders
+            .AsNoTracking()
+            .Where(o => vehicleIds.Contains(o.VehicleId))
+            .Where(o => o.Status != Enums.ServiceOrderStatus.Cancelled)
+            .GroupBy(o => o.VehicleId)
+            .Select(g => new
+            {
+                VehicleId = g.Key,
+                CurrentKm = g.OrderByDescending(o => o.Date).Select(o => o.CurrentKm).FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
+        return latest.ToDictionary(x => x.VehicleId, x => x.CurrentKm);
     }
 }

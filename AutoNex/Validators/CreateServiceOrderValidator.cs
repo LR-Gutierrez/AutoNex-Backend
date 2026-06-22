@@ -31,6 +31,13 @@ public class CreateServiceOrderValidator : AbstractValidator<CreateServiceOrderR
                 .WithMessage("Debe especificar tanto el kilometraje diario como los días por semana");
         });
 
+        When(x => x.ApplyLaborPercentage, () =>
+        {
+            RuleFor(x => x.LaborPercentage)
+                .NotNull().WithMessage("Debe especificar el porcentaje de mano de obra")
+                .InclusiveBetween(0, 100).WithMessage("El porcentaje debe estar entre 0 y 100");
+        });
+
         RuleFor(x => x.Items)
             .NotEmpty().WithMessage("Debe incluir al menos un servicio");
 

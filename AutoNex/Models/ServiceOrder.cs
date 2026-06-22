@@ -20,6 +20,8 @@ public class ServiceOrder
     public DateTime? OperationDate { get; set; }
     public decimal? AmountInBs { get; set; }
     public decimal? ExchangeRateValue { get; set; }
+    public bool ApplyLaborPercentage { get; set; }
+    public decimal? LaborPercentage { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
