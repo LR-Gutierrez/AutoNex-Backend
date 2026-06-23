@@ -23,9 +23,9 @@ public class FinancialRecordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? type, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var records = await _financialRecordService.GetAllAsync(from, to, type, category, page, pageSize, cancellationToken);
+        var records = await _financialRecordService.GetAllAsync(search, from, to, type, category, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<FinancialRecordResponse>>.Ok(records));
     }
 

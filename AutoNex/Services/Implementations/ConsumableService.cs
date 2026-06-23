@@ -18,12 +18,15 @@ public class ConsumableService : IConsumableService
         _context = context;
     }
 
-    public async Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? search, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Consumables
             .AsNoTracking()
             .Include(c => c.Supplier)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(c => c.Name.Contains(search));
 
         if (!string.IsNullOrWhiteSpace(category) && Enum.TryParse<ConsumableCategory>(category, true, out var cat))
             query = query.Where(c => c.Category == cat);

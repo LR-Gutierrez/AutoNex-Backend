@@ -17,12 +17,20 @@ public class SupplierService : ISupplierService
         _context = context;
     }
 
-    public async Task<PagedResponse<SupplierResponse>> GetAllAsync(int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<SupplierResponse>> GetAllAsync(string? search, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Suppliers
             .AsNoTracking()
-            .OrderByDescending(s => s.CreatedAt)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(s =>
+                s.Name.Contains(search) ||
+                s.ContactPerson!.Contains(search) ||
+                s.Phone!.Contains(search) ||
+                s.Email!.Contains(search));
+
+        query = query.OrderByDescending(s => s.CreatedAt);
 
         return await query.ToPagedResponseAsync(page, pageSize, s => s.ToResponse(), cancellationToken).ConfigureAwait(false);
     }

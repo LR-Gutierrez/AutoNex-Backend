@@ -20,9 +20,9 @@ public class ToolCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var categories = await _toolCategoryService.GetAllAsync(page, pageSize, cancellationToken);
+        var categories = await _toolCategoryService.GetAllAsync(search, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<ToolCategoryResponse>>.Ok(categories));
     }
 

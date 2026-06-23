@@ -22,9 +22,9 @@ public class ConsumablesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] string? category, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var consumables = await _consumableService.GetAllAsync(category, page, pageSize, cancellationToken);
+        var consumables = await _consumableService.GetAllAsync(search, category, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<ConsumableResponse>>.Ok(consumables));
     }
 

@@ -21,12 +21,15 @@ public class FinancialRecordService : IFinancialRecordService
     private static DateTime? ToUtc(DateTime? dt) =>
         dt.HasValue ? (dt.Value.Kind == DateTimeKind.Utc ? dt.Value : dt.Value.ToUniversalTime()) : null;
 
-    public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(string? search, DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.FinancialRecords
             .AsNoTracking()
             .Include(r => r.User)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(r => r.Description!.Contains(search));
 
         var utcFrom = ToUtc(from);
         var utcTo = ToUtc(to);

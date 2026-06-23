@@ -17,12 +17,16 @@ public class ToolCategoryService : IToolCategoryService
         _context = context;
     }
 
-    public async Task<PagedResponse<ToolCategoryResponse>> GetAllAsync(int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<ToolCategoryResponse>> GetAllAsync(string? search, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.ToolCategories
             .AsNoTracking()
-            .OrderByDescending(tc => tc.CreatedAt)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(tc => tc.Name.Contains(search));
+
+        query = query.OrderByDescending(tc => tc.CreatedAt);
 
         return await query.ToPagedResponseAsync(page, pageSize, tc => tc.ToResponse(), cancellationToken).ConfigureAwait(false);
     }

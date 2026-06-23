@@ -18,13 +18,16 @@ public class ToolService : IToolService
         _context = context;
     }
 
-    public async Task<PagedResponse<ToolResponse>> GetAllAsync(string? categoryName, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<ToolResponse>> GetAllAsync(string? search, string? categoryName, string? status, int? page, int? pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.Tools
             .AsNoTracking()
             .Include(t => t.ToolCategory)
             .Where(t => !t.ToolCategory.IsDeleted)
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(t => t.Name.Contains(search));
 
         if (!string.IsNullOrWhiteSpace(categoryName))
             query = query.Where(t => t.ToolCategory.Name.Contains(categoryName));

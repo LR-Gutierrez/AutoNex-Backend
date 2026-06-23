@@ -20,9 +20,9 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
-        var suppliers = await _supplierService.GetAllAsync(page, pageSize, cancellationToken);
+        var suppliers = await _supplierService.GetAllAsync(search, page, pageSize, cancellationToken);
         return Ok(ApiResponse<PagedResponse<SupplierResponse>>.Ok(suppliers));
     }
 

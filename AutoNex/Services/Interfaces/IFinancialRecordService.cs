@@ -5,7 +5,7 @@ namespace AutoNex.Services.Interfaces;
 
 public interface IFinancialRecordService
 {
-    Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResponse<FinancialRecordResponse>> GetAllAsync(string? search, DateTime? from, DateTime? to, string? type, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default);
     Task<FinancialRecordResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<FinancialRecordResponse> CreateAsync(CreateFinancialRecordRequest request, int userId, CancellationToken cancellationToken = default);
     Task<FinancialRecordResponse?> UpdateAsync(int id, UpdateFinancialRecordRequest request, CancellationToken cancellationToken = default);

@@ -5,7 +5,7 @@ namespace AutoNex.Services.Interfaces;
 
 public interface IConsumableService
 {
-    Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? category, int? page, int? pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResponse<ConsumableResponse>> GetAllAsync(string? search, string? category, int? page, int? pageSize, CancellationToken cancellationToken = default);
     Task<List<ConsumableResponse>> GetLowStockAsync(CancellationToken cancellationToken = default);
     Task<ConsumableResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<ConsumableResponse> CreateAsync(CreateConsumableRequest request, CancellationToken cancellationToken = default);
