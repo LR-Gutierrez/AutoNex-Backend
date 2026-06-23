@@ -68,6 +68,8 @@ public class FinancialRecordService : IFinancialRecordService
             Category = request.Category,
             AccountType = request.AccountType,
             Amount = request.Amount,
+            AmountInBs = request.AmountInBs,
+            ExchangeRateValue = request.ExchangeRateValue,
             Description = request.Description,
             Date = ToUtc(request.Date) ?? request.Date,
             UserId = userId
@@ -90,6 +92,8 @@ public class FinancialRecordService : IFinancialRecordService
         record.Category = request.Category;
         record.AccountType = request.AccountType;
         record.Amount = request.Amount;
+        record.AmountInBs = request.AmountInBs;
+        record.ExchangeRateValue = request.ExchangeRateValue;
         record.Description = request.Description;
         record.Date = ToUtc(request.Date) ?? request.Date;
         record.UpdatedAt = DateTime.UtcNow;

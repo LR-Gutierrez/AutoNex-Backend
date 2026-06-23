@@ -182,7 +182,9 @@ builder.Services.AddSignalR(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 builder.Services.AddHostedService<MileageAlertBackgroundService>();
+builder.Services.AddHostedService<RecurringExpenseBackgroundService>();
 builder.Services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
+builder.Services.AddScoped<IRecurringExpenseService, RecurringExpenseService>();
 
 var app = builder.Build();
 

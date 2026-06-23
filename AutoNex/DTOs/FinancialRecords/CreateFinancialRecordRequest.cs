@@ -7,6 +7,8 @@ public record CreateFinancialRecordRequest(
     FinancialCategory Category,
     AccountType AccountType,
     decimal Amount,
+    decimal? AmountInBs,
+    decimal? ExchangeRateValue,
     string? Description,
     DateTime Date
 );

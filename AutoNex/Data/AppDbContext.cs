@@ -26,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<BcvFetchLog> BcvFetchLogs => Set<BcvFetchLog>();
+    public DbSet<RecurringExpense> RecurringExpenses => Set<RecurringExpense>();
+    public DbSet<RecurringExpenseOccurrence> RecurringExpenseOccurrences => Set<RecurringExpenseOccurrence>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
