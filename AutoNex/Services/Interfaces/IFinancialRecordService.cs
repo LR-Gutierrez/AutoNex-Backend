@@ -12,4 +12,5 @@ public interface IFinancialRecordService
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<FinancialSummaryResponse> GetSummaryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default);
     Task<List<CategorySummaryResponse>> GetByCategoryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default);
+    Task<List<DailySummaryResponse>> GetDailySummaryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default);
 }

@@ -151,6 +151,38 @@ public class FinancialRecordService : IFinancialRecordService
         );
     }
 
+    public async Task<List<DailySummaryResponse>> GetDailySummaryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
+    {
+        var query = _context.FinancialRecords
+            .AsNoTracking()
+            .AsQueryable();
+
+        var utcFrom = ToUtc(from);
+        var utcTo = ToUtc(to);
+
+        if (utcFrom.HasValue)
+            query = query.Where(r => r.Date >= utcFrom.Value);
+        if (utcTo.HasValue)
+            query = query.Where(r => r.Date <= utcTo.Value);
+
+        var grouped = await query
+            .GroupBy(r => r.Date.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Income = g.Where(r => r.Type == FinancialRecordType.Income).Sum(r => r.Amount),
+                Expense = g.Where(r => r.Type == FinancialRecordType.Expense).Sum(r => r.Amount),
+            })
+            .OrderBy(g => g.Date)
+            .ToListAsync(cancellationToken);
+
+        return grouped.Select(g => new DailySummaryResponse(
+            g.Date.ToString("yyyy-MM-dd"),
+            g.Income,
+            g.Expense
+        )).ToList();
+    }
+
     public async Task<List<CategorySummaryResponse>> GetByCategoryAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
     {
         var query = _context.FinancialRecords.AsNoTracking().AsQueryable();

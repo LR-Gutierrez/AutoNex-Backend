@@ -87,4 +87,11 @@ public class FinancialRecordsController : ControllerBase
         var categories = await _financialRecordService.GetByCategoryAsync(from, to, cancellationToken);
         return Ok(ApiResponse<List<CategorySummaryResponse>>.Ok(categories));
     }
+
+    [HttpGet("daily-summary")]
+    public async Task<IActionResult> GetDailySummary([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken cancellationToken)
+    {
+        var daily = await _financialRecordService.GetDailySummaryAsync(from, to, cancellationToken);
+        return Ok(ApiResponse<List<DailySummaryResponse>>.Ok(daily));
+    }
 }
