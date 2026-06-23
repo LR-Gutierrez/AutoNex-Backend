@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<BcvFetchLog> BcvFetchLogs => Set<BcvFetchLog>();
     public DbSet<RecurringExpense> RecurringExpenses => Set<RecurringExpense>();
     public DbSet<RecurringExpenseOccurrence> RecurringExpenseOccurrences => Set<RecurringExpenseOccurrence>();
+    public DbSet<WhatsAppMessageLog> WhatsAppMessageLogs => Set<WhatsAppMessageLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

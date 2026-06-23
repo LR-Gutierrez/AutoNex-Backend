@@ -1,8 +1,12 @@
+using System.Security.Claims;
+using AutoNex.Data;
 using AutoNex.DTOs.WhatsApp;
 using AutoNex.Helpers;
+using AutoNex.Services;
 using AutoNex.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AutoNex.Controllers;
 
@@ -12,10 +16,14 @@ namespace AutoNex.Controllers;
 public class WhatsAppController : ControllerBase
 {
     private readonly IWaNotifierService _waNotifierService;
+    private readonly AppDbContext _context;
+    private readonly WhatsAppSendQueue _sendQueue;
 
-    public WhatsAppController(IWaNotifierService waNotifierService)
+    public WhatsAppController(IWaNotifierService waNotifierService, AppDbContext context, WhatsAppSendQueue sendQueue)
     {
         _waNotifierService = waNotifierService;
+        _context = context;
+        _sendQueue = sendQueue;
     }
 
     [HttpGet("qr")]
@@ -63,13 +71,58 @@ public class WhatsAppController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Phone) || string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(ApiResponse<object>.Fail("Teléfono y mensaje son requeridos"));
 
-        var sent = await _waNotifierService
-            .SendWhatsAppAsync(request.Phone, request.Message, cancellationToken)
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _context.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            .ConfigureAwait(false);
+        var sentBy = user?.FullName ?? "Unknown";
+
+        var phone = request.Phone;
+        var message = request.Message;
+        _sendQueue.Enqueue(async (sp, ct) =>
+        {
+            var waNotifier = sp.GetRequiredService<IWaNotifierService>();
+            await waNotifier.SendWhatsAppAsync(phone, message, "Test", sentBy, ct).ConfigureAwait(false);
+        });
+
+        return Ok(ApiResponse<object>.Ok(new { success = true }, "Mensaje encolado para envío en segundo plano"));
+    }
+
+    [HttpGet("logs")]
+    public async Task<ActionResult<ApiResponse<object>>> GetLogs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.WhatsAppMessageLogs
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt);
+
+        var total = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new WhatsAppMessageLogResponse(
+                x.Id,
+                x.Phone,
+                x.Message,
+                x.Type,
+                x.Success,
+                x.ErrorMessage,
+                x.SentBy,
+                x.CreatedAt
+            ))
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        if (!sent)
-            return StatusCode(502, ApiResponse<object>.Fail("Error al enviar el mensaje"));
-
-        return Ok(ApiResponse<object>.Ok(new { success = true }, "Mensaje enviado correctamente"));
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            items,
+            total,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling((double)total / pageSize),
+        }));
     }
 }

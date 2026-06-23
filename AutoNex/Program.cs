@@ -114,7 +114,7 @@ builder.Services.AddHttpClient<IWaNotifierService, WaNotifierService>((sp, clien
 {
     var settings = sp.GetRequiredService<IOptions<WaNotifierSettings>>();
     client.BaseAddress = new Uri(settings.Value.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
@@ -188,6 +188,8 @@ builder.Services.AddSignalR(options =>
 });
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<WhatsAppSendQueue>();
+builder.Services.AddHostedService<WhatsAppSendBackgroundService>();
 builder.Services.AddHostedService<MileageAlertBackgroundService>();
 builder.Services.AddHostedService<RecurringExpenseBackgroundService>();
 builder.Services.AddHostedService<WhatsAppStatusBroadcaster>();

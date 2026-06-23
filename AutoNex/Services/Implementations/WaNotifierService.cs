@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using AutoNex.Data;
+using AutoNex.Models;
 using AutoNex.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,6 +14,7 @@ public class WaNotifierService : IWaNotifierService
     private readonly HttpClient _httpClient;
     private readonly WaNotifierSettings _settings;
     private readonly ILogger<WaNotifierService> _logger;
+    private readonly AppDbContext _context;
     private readonly SemaphoreSlim _tokenLock = new(1, 1);
 
     private string? _cachedToken;
@@ -20,18 +23,28 @@ public class WaNotifierService : IWaNotifierService
     public WaNotifierService(
         HttpClient httpClient,
         IOptions<WaNotifierSettings> settings,
-        ILogger<WaNotifierService> logger)
+        ILogger<WaNotifierService> logger,
+        AppDbContext context)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
         _logger = logger;
+        _context = context;
     }
 
-    public async Task<bool> SendWhatsAppAsync(string to, string message, CancellationToken cancellationToken = default)
+    public async Task<bool> SendWhatsAppAsync(string to, string message, string? source = null, string? sentBy = null, CancellationToken cancellationToken = default)
     {
+        var phone = NormalizePhone(to);
+        var log = new WhatsAppMessageLog
+        {
+            Phone = phone,
+            Message = message,
+            Type = source is not null && source.Equals("Reminder", StringComparison.OrdinalIgnoreCase) ? "Reminder" : "Test",
+            SentBy = sentBy ?? "System",
+        };
+
         try
         {
-            var phone = new string(to.Where(char.IsDigit).ToArray());
             var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/messages/send")
@@ -43,13 +56,21 @@ public class WaNotifierService : IWaNotifierService
             var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
+            log.Success = true;
             _logger.LogInformation("WhatsApp message sent to {Phone} via wa-notifier", phone);
             return true;
         }
         catch (Exception ex)
         {
+            log.Success = false;
+            log.ErrorMessage = ex.Message;
             _logger.LogError(ex, "Error sending WhatsApp via wa-notifier to {To}", to);
             return false;
+        }
+        finally
+        {
+            _context.WhatsAppMessageLogs.Add(log);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -175,4 +196,13 @@ public class WaNotifierService : IWaNotifierService
 
     private sealed record TokenResponse([property: JsonPropertyName("accessToken")] string AccessToken);
     private sealed record QrResponse([property: JsonPropertyName("qr")] string? Qr);
+
+    private static string NormalizePhone(string phone)
+    {
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        // Venezuelan numbers stored as (0412) 123-4567 → normalize to 584121234567
+        if (digits.StartsWith('0') && digits.Length > 1)
+            return "58" + digits[1..];
+        return digits;
+    }
 }

@@ -69,7 +69,7 @@ public class NotificationService : INotificationService
 
         if (request.Type == NotificationType.WhatsApp)
         {
-            var sent = await _waNotifierService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
+            var sent = await _waNotifierService.SendWhatsAppAsync(request.Recipient, request.Message, "Reminder", sentBy: null, cancellationToken).ConfigureAwait(false);
             status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
             sentAt = sent ? DateTime.UtcNow : null;
         }

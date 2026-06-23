@@ -2,6 +2,7 @@ using AutoNex.DTOs;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Notifications;
 using AutoNex.Helpers;
+using AutoNex.Services;
 using AutoNex.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +17,18 @@ public class MileageAlertsController : ControllerBase
     private readonly IMileageAlertService _mileageAlertService;
     private readonly INotificationService _notificationService;
     private readonly IDashboardNotifier _dashboardNotifier;
+    private readonly WhatsAppSendQueue _sendQueue;
 
     public MileageAlertsController(
         IMileageAlertService mileageAlertService,
         INotificationService notificationService,
-        IDashboardNotifier dashboardNotifier)
+        IDashboardNotifier dashboardNotifier,
+        WhatsAppSendQueue sendQueue)
     {
         _mileageAlertService = mileageAlertService;
         _notificationService = notificationService;
         _dashboardNotifier = dashboardNotifier;
+        _sendQueue = sendQueue;
     }
 
     [HttpGet]
@@ -82,8 +86,23 @@ public class MileageAlertsController : ControllerBase
         try
         {
             var alerts = await _mileageAlertService.CreateOrUpdateFromOrderAsync(orderId, cancellationToken);
+
+            foreach (var alert in alerts)
+            {
+                var alertId = alert.Id;
+                _sendQueue.Enqueue(async (sp, ct) =>
+                {
+                    var notificationService = sp.GetRequiredService<INotificationService>();
+                    await notificationService.SendReminderAsync(alertId, ct).ConfigureAwait(false);
+                });
+            }
+
             await _dashboardNotifier.NotifyAllAsync(cancellationToken);
-            return Ok(ApiResponse<List<MileageAlertResponse>>.Ok(alerts, "Alertas creadas/actualizadas exitosamente"));
+
+            return Ok(ApiResponse<object>.Ok(
+                new { alerts, sentCount = 0, failCount = 0 },
+                $"{alerts.Count} alerta(s) creada(s), notificaciones encoladas para envío en segundo plano"
+            ));
         }
         catch (KeyNotFoundException ex)
         {
