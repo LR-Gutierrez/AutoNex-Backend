@@ -57,8 +57,13 @@ public class MileageAlertBackgroundService : BackgroundService
                 a.NextAlertKm))
             .ToList();
 
+        var minInterval = TimeSpan.FromHours(23);
+
         foreach (var alert in dueAlerts)
         {
+            if (alert.LastAlertDate.HasValue && DateTime.UtcNow - alert.LastAlertDate.Value < minInterval)
+                continue;
+
             try
             {
                 await notificationService.SendReminderAsync(alert.Id).ConfigureAwait(false);
