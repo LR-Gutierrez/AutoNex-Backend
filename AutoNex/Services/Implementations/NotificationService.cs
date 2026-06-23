@@ -14,16 +14,16 @@ namespace AutoNex.Services.Implementations;
 public class NotificationService : INotificationService
 {
     private readonly AppDbContext _context;
-    private readonly ITwilioService _twilioService;
+    private readonly IWaNotifierService _waNotifierService;
     private readonly IHubContext<NotificationsHub> _hubContext;
 
     public NotificationService(
         AppDbContext context,
-        ITwilioService twilioService,
+        IWaNotifierService waNotifierService,
         IHubContext<NotificationsHub> hubContext)
     {
         _context = context;
-        _twilioService = twilioService;
+        _waNotifierService = waNotifierService;
         _hubContext = hubContext;
     }
 
@@ -67,9 +67,9 @@ public class NotificationService : INotificationService
         NotificationStatus status;
         DateTime? sentAt;
 
-        if (request.Type == NotificationType.WhatsApp && _twilioService.IsConfigured)
+        if (request.Type == NotificationType.WhatsApp)
         {
-            var sent = await _twilioService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
+            var sent = await _waNotifierService.SendWhatsAppAsync(request.Recipient, request.Message, cancellationToken).ConfigureAwait(false);
             status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
             sentAt = sent ? DateTime.UtcNow : null;
         }

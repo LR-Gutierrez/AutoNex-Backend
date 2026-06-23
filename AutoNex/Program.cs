@@ -8,6 +8,7 @@ using AutoNex.Helpers;
 using AutoNex.Hubs;
 using AutoNex.Middleware;
 using AutoNex.Models;
+using AutoNex.Services;
 using AutoNex.Services.Implementations;
 using AutoNex.Services.Interfaces;
 using FluentValidation;
@@ -107,13 +108,19 @@ builder.Services.AddScoped<IMileageAlertService, MileageAlertService>();
 builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IInventoryMovementService, InventoryMovementService>();
-builder.Services.AddScoped<ITwilioService, TwilioService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.AddHttpClient<IWaNotifierService, WaNotifierService>((sp, client) =>
+{
+    var settings = sp.GetRequiredService<IOptions<WaNotifierSettings>>();
+    client.BaseAddress = new Uri(settings.Value.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<SeedSettings>(builder.Configuration.GetSection("SeedData"));
-builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
+builder.Services.Configure<WaNotifierSettings>(builder.Configuration.GetSection("WaNotifier"));
 
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("bcv", client =>
@@ -183,6 +190,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 builder.Services.AddHostedService<MileageAlertBackgroundService>();
 builder.Services.AddHostedService<RecurringExpenseBackgroundService>();
+builder.Services.AddHostedService<WhatsAppStatusBroadcaster>();
 builder.Services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
 builder.Services.AddScoped<IRecurringExpenseService, RecurringExpenseService>();
 
@@ -229,6 +237,7 @@ app.MapControllers();
 app.MapHub<DashboardHub>("/hubs/dashboard");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapHub<ExchangeRateHub>("/hubs/exchange-rates");
+app.MapHub<WhatsAppHub>("/hubs/whatsapp");
 app.MapHealthChecks("/health");
 
 app.Run();
