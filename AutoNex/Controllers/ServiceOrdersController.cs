@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AutoNex.DTOs;
+using AutoNex.DTOs.Notifications;
 using AutoNex.DTOs.ServiceOrders;
 using AutoNex.Helpers;
 using AutoNex.Services.Interfaces;
@@ -15,11 +16,13 @@ public class ServiceOrdersController : ControllerBase
 {
     private readonly IServiceOrderService _serviceOrderService;
     private readonly IDashboardNotifier _dashboardNotifier;
+    private readonly INotificationService _notificationService;
 
-    public ServiceOrdersController(IServiceOrderService serviceOrderService, IDashboardNotifier dashboardNotifier)
+    public ServiceOrdersController(IServiceOrderService serviceOrderService, IDashboardNotifier dashboardNotifier, INotificationService notificationService)
     {
         _serviceOrderService = serviceOrderService;
         _dashboardNotifier = dashboardNotifier;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -87,5 +90,22 @@ public class ServiceOrdersController : ControllerBase
 
         await _dashboardNotifier.NotifyAllAsync(cancellationToken);
         return Ok(ApiResponse<ServiceOrderResponse>.Ok(order, "Orden marcada como pagada exitosamente"));
+    }
+
+    [HttpGet("{id}/alert-preview")]
+    public async Task<IActionResult> GetAlertPreview(int id, CancellationToken cancellationToken)
+    {
+        var previews = await _notificationService.BuildPreviewsForOrderAsync(id, cancellationToken);
+        return Ok(ApiResponse<List<AlertPreviewDto>>.Ok(previews));
+    }
+
+    [HttpPost("{id}/resend-alerts")]
+    public async Task<IActionResult> ResendAlerts(int id, [FromBody] ResendAlertsRequest request, CancellationToken cancellationToken)
+    {
+        var results = await _notificationService.ResendRemindersForOrderAsync(id, request.AlertIds, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(
+            new { sentCount = results.Count, notifications = results },
+            $"{results.Count} notificación(es) reenviada(s)"
+        ));
     }
 }

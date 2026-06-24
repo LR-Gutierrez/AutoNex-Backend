@@ -186,14 +186,6 @@ public class MileageAlertService : IMileageAlertService
             .Where(a => a.VehicleId == order.VehicleId && serviceIds.Contains(a.ServiceId) && a.IsActive)
             .ToListAsync(cancellationToken);
 
-        var previousOrder = await _context.ServiceOrders
-            .AsNoTracking()
-            .Where(o => o.VehicleId == order.VehicleId
-                && o.Status == Enums.ServiceOrderStatus.Completed
-                && o.Id != order.Id)
-            .OrderByDescending(o => o.Date)
-            .FirstOrDefaultAsync(cancellationToken);
-
         foreach (var item in serviceItems)
         {
             var service = item.Service!;
@@ -207,44 +199,24 @@ public class MileageAlertService : IMileageAlertService
                 ? currentKm + service.MaxKmInterval!.Value
                 : currentKm;
 
-            var alert = existingAlerts.FirstOrDefault(a => a.ServiceId == service.Id);
+            var existingAlert = existingAlerts.FirstOrDefault(a => a.ServiceId == service.Id);
 
-            if (alert is null)
+            if (existingAlert is not null)
             {
-                alert = new MileageAlert
-                {
-                    VehicleId = order.VehicleId,
-                    ServiceId = service.Id,
-                    EstimatedWeeklyKm = estimatedWeeklyKm ?? 0,
-                    NextAlertKm = nextAlertKm,
-                    NextAlertDate = nextAlertDate,
-                    IsActive = true
-                };
-                _context.MileageAlerts.Add(alert);
+                existingAlert.IsActive = false;
+                existingAlert.UpdatedAt = DateTime.UtcNow;
             }
-            else
+
+            var alert = new MileageAlert
             {
-                if (previousOrder is not null && previousOrder.CurrentKm > 0 && previousOrder.CurrentKm != currentKm)
-                {
-                    var kmDiff = currentKm - previousOrder.CurrentKm;
-                    var daysDiff = (order.Date - previousOrder.Date).TotalDays;
-                    if (daysDiff > 0)
-                    {
-                        var calculatedWeekly = (int)(kmDiff / (daysDiff / 7));
-                        if (calculatedWeekly > 0)
-                            alert.EstimatedWeeklyKm = calculatedWeekly;
-                    }
-                }
-
-                if (estimatedWeeklyKm.HasValue)
-                    alert.EstimatedWeeklyKm = estimatedWeeklyKm.Value;
-
-                if (hasKmInterval || alert.NextAlertKm <= currentKm)
-                    alert.NextAlertKm = nextAlertKm;
-
-                alert.NextAlertDate = nextAlertDate ?? alert.NextAlertDate;
-                alert.UpdatedAt = DateTime.UtcNow;
-            }
+                VehicleId = order.VehicleId,
+                ServiceId = service.Id,
+                EstimatedWeeklyKm = estimatedWeeklyKm ?? 0,
+                NextAlertKm = nextAlertKm,
+                NextAlertDate = nextAlertDate,
+                IsActive = true
+            };
+            _context.MileageAlerts.Add(alert);
         }
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

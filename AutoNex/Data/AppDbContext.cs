@@ -29,6 +29,8 @@ public class AppDbContext : DbContext
     public DbSet<RecurringExpense> RecurringExpenses => Set<RecurringExpense>();
     public DbSet<RecurringExpenseOccurrence> RecurringExpenseOccurrences => Set<RecurringExpenseOccurrence>();
     public DbSet<WhatsAppMessageLog> WhatsAppMessageLogs => Set<WhatsAppMessageLog>();
+    public DbSet<MessageTemplate> MessageTemplates => Set<MessageTemplate>();
+    public DbSet<WorkshopInfo> WorkshopInfos => Set<WorkshopInfo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

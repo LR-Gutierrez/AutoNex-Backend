@@ -2,8 +2,10 @@ using AutoNex.DTOs.Clients;
 using AutoNex.DTOs.Consumables;
 using AutoNex.DTOs.FinancialRecords;
 using AutoNex.DTOs.InventoryMovements;
+using AutoNex.DTOs.MessageTemplates;
 using AutoNex.DTOs.MileageAlerts;
 using AutoNex.DTOs.Notifications;
+using AutoNex.DTOs.WorkshopInfo;
 using AutoNex.DTOs.Services;
 using AutoNex.DTOs.Suppliers;
 using AutoNex.DTOs.ToolCategories;
@@ -204,5 +206,37 @@ public static class MappingExtensions
             alert.IsActive,
             alert.CreatedAt
         );
+    }
+
+    public static MessageTemplateResponse ToResponse(this MessageTemplate template)
+    {
+        return new MessageTemplateResponse
+        {
+            Id = template.Id,
+            Key = template.Key,
+            Template = template.Template,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        };
+    }
+
+    public static WorkshopInfoResponse ToResponse(this WorkshopInfo info)
+    {
+        return new WorkshopInfoResponse
+        {
+            Id = info.Id,
+            BusinessName = info.BusinessName,
+            Rif = info.Rif,
+            Address = info.Address,
+            City = info.City,
+            MapsUrl = info.MapsUrl,
+            Phone = info.Phone,
+            SecondaryPhone = info.SecondaryPhone,
+            Email = info.Email,
+            Website = info.Website,
+            OpeningHours = info.OpeningHours,
+            UpdatedAt = info.UpdatedAt
+        };
     }
 }

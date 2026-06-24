@@ -94,6 +94,18 @@ public static class AppDbSeeder
             }
         }
 
+        if (!await db.MessageTemplates.AnyAsync())
+        {
+            db.MessageTemplates.Add(new MessageTemplate
+            {
+                Key = "mileage_alert_reminder",
+                Template = "🚗 {WorkshopName} | Tu asistente de confianza\nHola {ClientName}!! esperamos que estés teniendo un buen día 😊\n\nQueremos recordarte que tu vehículo ({Brand} {Model} - {LicensePlate}) está próximo a su mantenimiento de {ServiceName}.\n\nAtenderlo a tiempo te ayudará a mantenerlo en óptimas condiciones y evitar contratiempos.\n\n{WorkshopAddress}\n{WorkshopPhone}",
+                Description = "Template para recordatorios de alertas de kilometraje"
+            });
+
+            await db.SaveChangesAsync();
+        }
+
         if (settings.Settings.Count > 0)
         {
             var existingKeys = await db.Settings.Select(s => s.Key).ToListAsync();

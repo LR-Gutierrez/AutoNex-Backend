@@ -1,6 +1,7 @@
 using AutoNex.Data;
 using AutoNex.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace AutoNex.Services.Implementations;
 
@@ -8,11 +9,16 @@ public class MileageAlertBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MileageAlertBackgroundService> _logger;
+    private readonly int _intervalSeconds;
 
-    public MileageAlertBackgroundService(IServiceProvider serviceProvider, ILogger<MileageAlertBackgroundService> logger)
+    public MileageAlertBackgroundService(
+        IServiceProvider serviceProvider,
+        ILogger<MileageAlertBackgroundService> logger,
+        IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _intervalSeconds = configuration.GetValue<int>("MileageAlert:IntervalSeconds", 3600);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -30,7 +36,7 @@ public class MileageAlertBackgroundService : BackgroundService
                 _logger.LogError(ex, "Error al procesar alertas de kilometraje");
             }
 
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(_intervalSeconds), stoppingToken).ConfigureAwait(false);
         }
     }
 

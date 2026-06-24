@@ -109,6 +109,8 @@ builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IInventoryMovementService, InventoryMovementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IMessageTemplateService, MessageTemplateService>();
+builder.Services.AddScoped<IWorkshopInfoService, WorkshopInfoService>();
 
 builder.Services.AddHttpClient<IWaNotifierService, WaNotifierService>((sp, client) =>
 {

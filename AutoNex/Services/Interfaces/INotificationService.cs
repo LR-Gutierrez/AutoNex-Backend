@@ -9,4 +9,6 @@ public interface INotificationService
     Task<NotificationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<NotificationResponse> SendAsync(SendNotificationRequest request, CancellationToken cancellationToken = default);
     Task<NotificationResponse?> SendReminderAsync(int alertId, CancellationToken cancellationToken = default);
+    Task<List<AlertPreviewDto>> BuildPreviewsForOrderAsync(int orderId, CancellationToken cancellationToken = default);
+    Task<List<NotificationResponse>> ResendRemindersForOrderAsync(int orderId, List<int>? alertIds = null, CancellationToken cancellationToken = default);
 }
