@@ -19,6 +19,7 @@ public class NotificationService : INotificationService
     private readonly IHubContext<NotificationsHub> _hubContext;
     private readonly IMessageTemplateService _templateService;
     private readonly IWorkshopInfoService _workshopInfoService;
+    private readonly WhatsAppSendQueue _sendQueue;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
@@ -27,6 +28,7 @@ public class NotificationService : INotificationService
         IHubContext<NotificationsHub> hubContext,
         IMessageTemplateService templateService,
         IWorkshopInfoService workshopInfoService,
+        WhatsAppSendQueue sendQueue,
         ILogger<NotificationService> logger)
     {
         _context = context;
@@ -34,6 +36,7 @@ public class NotificationService : INotificationService
         _hubContext = hubContext;
         _templateService = templateService;
         _workshopInfoService = workshopInfoService;
+        _sendQueue = sendQueue;
         _logger = logger;
     }
 
@@ -79,9 +82,8 @@ public class NotificationService : INotificationService
 
         if (request.Type == NotificationType.WhatsApp)
         {
-            var sent = await _waNotifierService.SendWhatsAppAsync(request.Recipient, request.Message, "Reminder", sentBy: null, cancellationToken).ConfigureAwait(false);
-            status = sent ? NotificationStatus.Sent : NotificationStatus.Failed;
-            sentAt = sent ? DateTime.UtcNow : null;
+            status = NotificationStatus.Pending;
+            sentAt = null;
         }
         else
         {
@@ -102,6 +104,35 @@ public class NotificationService : INotificationService
 
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (request.Type == NotificationType.WhatsApp)
+        {
+            var notificationId = notification.Id;
+            _sendQueue.Enqueue(async (sp, ct) =>
+            {
+                try
+                {
+                    var waNotifier = sp.GetRequiredService<IWaNotifierService>();
+
+                    await waNotifier.SendWhatsAppAsync(request.Recipient, request.Message, "Reminder", sentBy: null, notificationId.ToString(), ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al enviar notificación WhatsApp en segundo plano");
+
+                    var dbContext = sp.GetRequiredService<AppDbContext>();
+                    var notif = await dbContext.Notifications
+                        .Include(n => n.Client)
+                        .Include(n => n.Vehicle)
+                        .FirstOrDefaultAsync(n => n.Id == notificationId, ct);
+                    if (notif is not null && notif.Status == NotificationStatus.Pending)
+                    {
+                        notif.Status = NotificationStatus.Failed;
+                        await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+                    }
+                }
+            });
+        }
 
         var response = (await GetByIdAsync(notification.Id, cancellationToken).ConfigureAwait(false))!;
 

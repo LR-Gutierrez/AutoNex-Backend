@@ -12,27 +12,23 @@ namespace AutoNex.Services.Implementations;
 public class WaNotifierService : IWaNotifierService
 {
     private readonly HttpClient _httpClient;
-    private readonly WaNotifierSettings _settings;
     private readonly ILogger<WaNotifierService> _logger;
     private readonly AppDbContext _context;
-    private readonly SemaphoreSlim _tokenLock = new(1, 1);
-
-    private string? _cachedToken;
-    private DateTime _tokenExpiry = DateTime.MinValue;
+    private readonly IWaNotifierTokenStore _tokenStore;
 
     public WaNotifierService(
         HttpClient httpClient,
-        IOptions<WaNotifierSettings> settings,
         ILogger<WaNotifierService> logger,
-        AppDbContext context)
+        AppDbContext context,
+        IWaNotifierTokenStore tokenStore)
     {
         _httpClient = httpClient;
-        _settings = settings.Value;
         _logger = logger;
         _context = context;
+        _tokenStore = tokenStore;
     }
 
-    public async Task<bool> SendWhatsAppAsync(string to, string message, string? source = null, string? sentBy = null, CancellationToken cancellationToken = default)
+    public async Task<bool> SendWhatsAppAsync(string to, string message, string? source = null, string? sentBy = null, string? correlationId = null, CancellationToken cancellationToken = default)
     {
         var phone = NormalizePhone(to);
         var log = new WhatsAppMessageLog
@@ -45,11 +41,11 @@ public class WaNotifierService : IWaNotifierService
 
         try
         {
-            var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
+            var token = await _tokenStore.GetTokenAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/messages/send")
             {
-                Content = JsonContent.Create(new { phone, message })
+                Content = JsonContent.Create(new { phone, message, correlationId })
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -95,7 +91,7 @@ public class WaNotifierService : IWaNotifierService
     {
         try
         {
-            var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
+            var token = await _tokenStore.GetTokenAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "/api/whatsapp/status");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -116,7 +112,7 @@ public class WaNotifierService : IWaNotifierService
     {
         try
         {
-            var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
+            var token = await _tokenStore.GetTokenAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/whatsapp/logout");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -138,7 +134,7 @@ public class WaNotifierService : IWaNotifierService
     {
         try
         {
-            var token = await GetTokenAsync(cancellationToken).ConfigureAwait(false);
+            var token = await _tokenStore.GetTokenAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/whatsapp/restart");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -156,45 +152,6 @@ public class WaNotifierService : IWaNotifierService
         }
     }
 
-    private async Task<string> GetTokenAsync(CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry)
-            return _cachedToken;
-
-        await _tokenLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry)
-                return _cachedToken;
-
-            var response = await _httpClient.PostAsJsonAsync(
-                "/api/auth/token",
-                new { apiKey = _settings.ApiKey },
-                cancellationToken).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content
-                .ReadFromJsonAsync<TokenResponse>(cancellationToken)
-                .ConfigureAwait(false);
-
-            _cachedToken = result!.AccessToken;
-            _tokenExpiry = DateTime.UtcNow.AddMinutes(55);
-
-            _logger.LogDebug("wa-notifier JWT token obtained, expires at {Expiry}", _tokenExpiry);
-            return _cachedToken;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to obtain wa-notifier JWT token");
-            throw;
-        }
-        finally
-        {
-            _tokenLock.Release();
-        }
-    }
-
-    private sealed record TokenResponse([property: JsonPropertyName("accessToken")] string AccessToken);
     private sealed record QrResponse([property: JsonPropertyName("qr")] string? Qr);
 
     private static string NormalizePhone(string phone)

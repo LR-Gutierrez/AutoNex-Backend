@@ -52,7 +52,9 @@ public class MileageAlertConfiguration : IEntityTypeConfiguration<MileageAlert>
             .HasForeignKey(a => a.ServiceId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(a => new { a.VehicleId, a.ServiceId }).IsUnique();
+        builder.HasIndex(a => new { a.VehicleId, a.ServiceId })
+            .IsUnique()
+            .HasFilter("is_active = true");
 
         builder.HasQueryFilter(a => !a.IsDeleted);
     }

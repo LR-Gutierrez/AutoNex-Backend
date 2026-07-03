@@ -183,8 +183,17 @@ public class MileageAlertService : IMileageAlertService
 
         var serviceIds = serviceItems.Select(i => i.Service!.Id).ToList();
         var existingAlerts = await _context.MileageAlerts
+            .IgnoreQueryFilters()
             .Where(a => a.VehicleId == order.VehicleId && serviceIds.Contains(a.ServiceId) && a.IsActive)
             .ToListAsync(cancellationToken);
+
+        foreach (var existingAlert in existingAlerts)
+        {
+            existingAlert.IsActive = false;
+            existingAlert.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var item in serviceItems)
         {
@@ -198,14 +207,6 @@ public class MileageAlertService : IMileageAlertService
             var nextAlertKm = hasKmInterval
                 ? currentKm + service.MaxKmInterval!.Value
                 : currentKm;
-
-            var existingAlert = existingAlerts.FirstOrDefault(a => a.ServiceId == service.Id);
-
-            if (existingAlert is not null)
-            {
-                existingAlert.IsActive = false;
-                existingAlert.UpdatedAt = DateTime.UtcNow;
-            }
 
             var alert = new MileageAlert
             {

@@ -112,6 +112,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IMessageTemplateService, MessageTemplateService>();
 builder.Services.AddScoped<IWorkshopInfoService, WorkshopInfoService>();
 
+builder.Services.AddSingleton<IWaNotifierTokenStore, WaNotifierTokenStore>();
+
 builder.Services.AddHttpClient<IWaNotifierService, WaNotifierService>((sp, client) =>
 {
     var settings = sp.GetRequiredService<IOptions<WaNotifierSettings>>();
@@ -194,7 +196,7 @@ builder.Services.AddSingleton<WhatsAppSendQueue>();
 builder.Services.AddHostedService<WhatsAppSendBackgroundService>();
 builder.Services.AddHostedService<MileageAlertBackgroundService>();
 builder.Services.AddHostedService<RecurringExpenseBackgroundService>();
-builder.Services.AddHostedService<WhatsAppStatusBroadcaster>();
+
 builder.Services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
 builder.Services.AddScoped<IRecurringExpenseService, RecurringExpenseService>();
 

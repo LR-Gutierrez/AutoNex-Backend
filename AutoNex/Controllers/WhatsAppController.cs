@@ -77,15 +77,9 @@ public class WhatsAppController : ControllerBase
             .ConfigureAwait(false);
         var sentBy = user?.FullName ?? "Unknown";
 
-        var phone = request.Phone;
-        var message = request.Message;
-        _sendQueue.Enqueue(async (sp, ct) =>
-        {
-            var waNotifier = sp.GetRequiredService<IWaNotifierService>();
-            await waNotifier.SendWhatsAppAsync(phone, message, "Test", sentBy, ct).ConfigureAwait(false);
-        });
+        var messageId = _sendQueue.Enqueue(request.Phone, request.Message, "Test", sentBy);
 
-        return Ok(ApiResponse<object>.Ok(new { success = true }, "Mensaje encolado para envío en segundo plano"));
+        return Ok(ApiResponse<object>.Ok(new { success = true, messageId }, "Mensaje agregado a la cola"));
     }
 
     [HttpGet("logs")]
