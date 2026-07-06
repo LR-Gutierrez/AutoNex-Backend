@@ -5,7 +5,7 @@ public record WhatsAppMessageLogResponse(
     string Phone,
     string Message,
     string Type,
-    bool Success,
+    string Status,
     string? ErrorMessage,
     string SentBy,
     DateTime CreatedAt

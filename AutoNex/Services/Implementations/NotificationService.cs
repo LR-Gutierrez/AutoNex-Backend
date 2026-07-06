@@ -107,31 +107,18 @@ public class NotificationService : INotificationService
 
         if (request.Type == NotificationType.WhatsApp)
         {
-            var notificationId = notification.Id;
-            _sendQueue.Enqueue(async (sp, ct) =>
+            var waLog = new WhatsAppMessageLog
             {
-                try
-                {
-                    var waNotifier = sp.GetRequiredService<IWaNotifierService>();
+                Phone = request.Recipient,
+                Message = request.Message,
+                Type = "Reminder",
+                SentBy = "System",
+                Status = "Sending",
+            };
+            _context.WhatsAppMessageLogs.Add(waLog);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-                    await waNotifier.SendWhatsAppAsync(request.Recipient, request.Message, "Reminder", sentBy: null, notificationId.ToString(), ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al enviar notificación WhatsApp en segundo plano");
-
-                    var dbContext = sp.GetRequiredService<AppDbContext>();
-                    var notif = await dbContext.Notifications
-                        .Include(n => n.Client)
-                        .Include(n => n.Vehicle)
-                        .FirstOrDefaultAsync(n => n.Id == notificationId, ct);
-                    if (notif is not null && notif.Status == NotificationStatus.Pending)
-                    {
-                        notif.Status = NotificationStatus.Failed;
-                        await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-                    }
-                }
-            });
+            _sendQueue.Enqueue(request.Recipient, request.Message, "Reminder", "System", notification.Id.ToString(), waLog.Id);
         }
 
         var response = (await GetByIdAsync(notification.Id, cancellationToken).ConfigureAwait(false))!;

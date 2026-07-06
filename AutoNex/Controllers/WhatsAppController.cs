@@ -77,9 +77,20 @@ public class WhatsAppController : ControllerBase
             .ConfigureAwait(false);
         var sentBy = user?.FullName ?? "Unknown";
 
-        var messageId = _sendQueue.Enqueue(request.Phone, request.Message, "Test", sentBy);
+        var log = new WhatsAppMessageLog
+        {
+            Phone = request.Phone,
+            Message = request.Message,
+            Type = "Test",
+            SentBy = sentBy,
+            Status = "Sending",
+        };
+        _context.WhatsAppMessageLogs.Add(log);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return Ok(ApiResponse<object>.Ok(new { success = true, messageId }, "Mensaje agregado a la cola"));
+        var messageId = _sendQueue.Enqueue(request.Phone, request.Message, "Test", sentBy, logId: log.Id);
+
+        return Ok(ApiResponse<object>.Ok(new { success = true, messageId, logId = log.Id }, "Mensaje agregado a la cola"));
     }
 
     [HttpGet("logs")]
@@ -102,7 +113,7 @@ public class WhatsAppController : ControllerBase
                 x.Phone,
                 x.Message,
                 x.Type,
-                x.Success,
+                x.Status,
                 x.ErrorMessage,
                 x.SentBy,
                 x.CreatedAt

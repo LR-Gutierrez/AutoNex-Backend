@@ -33,6 +33,11 @@ public class WhatsAppHub : Hub
         await base.OnConnectedAsync().ConfigureAwait(false);
     }
 
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
+    }
+
     public async Task NotifyStatus(object status)
     {
         if (!IsWaNotifier()) return;
@@ -48,33 +53,76 @@ public class WhatsAppHub : Hub
     public async Task NotifyDelivery(string? correlationId, bool success, string? error)
     {
         if (!IsWaNotifier()) return;
+
         await Clients.Others.SendAsync("MessageDelivery", new { correlationId, success, error });
 
-        if (!int.TryParse(correlationId, out var notificationId)) return;
+        if (string.IsNullOrEmpty(correlationId)) return;
+
+        // Parse compound correlationId: "notif:{notifId}:log:{logId}" or "log:{logId}"
+        int? logId = null;
+        int? notificationId = null;
+
+        var parts = correlationId.Split(':');
+        if (parts.Length == 2 && parts[0] == "log" && int.TryParse(parts[1], out var lid))
+        {
+            logId = lid;
+        }
+        else if (parts.Length == 4 && parts[0] == "notif" && int.TryParse(parts[1], out var nid) && parts[2] == "log" && int.TryParse(parts[3], out lid))
+        {
+            notificationId = nid;
+            logId = lid;
+        }
 
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var sp = scope.ServiceProvider;
             var context = sp.GetRequiredService<AppDbContext>();
-            var notification = await context.Notifications
-                .Include(n => n.Client)
-                .Include(n => n.Vehicle)
-                .FirstOrDefaultAsync(n => n.Id == notificationId);
-            if (notification is not null && notification.Status == NotificationStatus.Pending)
-            {
-                notification.Status = success ? NotificationStatus.Sent : NotificationStatus.Failed;
-                notification.SentAt = success ? DateTime.UtcNow : null;
-                await context.SaveChangesAsync();
 
-                var notificationsHub = sp.GetRequiredService<IHubContext<NotificationsHub>>();
-                await notificationsHub.Clients.Group("all").SendAsync("newNotification", notification.ToResponse());
+            // Always update WhatsAppMessageLog if we have a logId
+            if (logId.HasValue)
+            {
+                var log = await context.WhatsAppMessageLogs.FindAsync(logId.Value);
+                if (log is not null && log.Status == "Sending")
+                {
+                    log.Status = success ? "Sent" : "Failed";
+                    log.ErrorMessage = success ? null : error;
+                    await context.SaveChangesAsync();
+                }
+
+                await Clients.Group("whatsapp").SendAsync("MessageSent", new
+                {
+                    messageId = (string?)null,
+                    logId = logId.Value,
+                    success,
+                    status = success ? "Sent" : "Failed",
+                    phone = (string?)null,
+                    error,
+                });
+            }
+
+            // Update Notification if we have a notificationId
+            if (notificationId.HasValue)
+            {
+                var notification = await context.Notifications
+                    .Include(n => n.Client)
+                    .Include(n => n.Vehicle)
+                    .FirstOrDefaultAsync(n => n.Id == notificationId.Value);
+                if (notification is not null && notification.Status == NotificationStatus.Pending)
+                {
+                    notification.Status = success ? NotificationStatus.Sent : NotificationStatus.Failed;
+                    notification.SentAt = success ? DateTime.UtcNow : null;
+                    await context.SaveChangesAsync();
+
+                    var notificationsHub = sp.GetRequiredService<IHubContext<NotificationsHub>>();
+                    await notificationsHub.Clients.Group("all").SendAsync("newNotification", notification.ToResponse());
+                }
             }
         }
         catch (Exception ex)
         {
             var logger = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<ILogger<WhatsAppHub>>();
-            logger.LogError(ex, "Error updating notification delivery status for correlation {CorrelationId}", correlationId);
+            logger.LogError(ex, "Error updating delivery status for correlation {CorrelationId}", correlationId);
         }
     }
 

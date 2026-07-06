@@ -27,8 +27,10 @@ public class WhatsAppMessageLogConfiguration : IEntityTypeConfiguration<WhatsApp
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(x => x.Success)
-            .HasColumnName("success");
+        builder.Property(x => x.Status)
+            .HasColumnName("status")
+            .IsRequired()
+            .HasMaxLength(10);
 
         builder.Property(x => x.ErrorMessage)
             .HasColumnName("error_message")

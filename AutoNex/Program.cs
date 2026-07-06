@@ -118,7 +118,13 @@ builder.Services.AddHttpClient<IWaNotifierService, WaNotifierService>((sp, clien
 {
     var settings = sp.GetRequiredService<IOptions<WaNotifierSettings>>();
     client.BaseAddress = new Uri(settings.Value.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(180);
+});
+builder.Services.AddHttpClient("WaNotifier", (sp, client) =>
+{
+    var settings = sp.GetRequiredService<IOptions<WaNotifierSettings>>();
+    client.BaseAddress = new Uri(settings.Value.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(180);
 });
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
@@ -189,6 +195,9 @@ builder.Services.AddSignalR(options =>
             options.EnableDetailedErrors = builder.Environment.IsDevelopment();
     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+}).AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();

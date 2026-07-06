@@ -9,6 +9,8 @@ public class QueuedMessage
     public required string Message { get; init; }
     public string Source { get; init; } = string.Empty;
     public string SentBy { get; init; } = string.Empty;
+    public string? CorrelationId { get; init; }
+    public int? LogId { get; init; }
 }
 
 public class WhatsAppSendQueue
@@ -17,7 +19,7 @@ public class WhatsAppSendQueue
     private readonly Channel<Func<IServiceProvider, CancellationToken, Task>> _workChannel =
         Channel.CreateBounded<Func<IServiceProvider, CancellationToken, Task>>(100);
 
-    public string Enqueue(string phone, string message, string source, string sentBy)
+    public string Enqueue(string phone, string message, string source, string sentBy, string? correlationId = null, int? logId = null)
     {
         var msg = new QueuedMessage
         {
@@ -25,6 +27,8 @@ public class WhatsAppSendQueue
             Message = message,
             Source = source,
             SentBy = sentBy,
+            CorrelationId = correlationId,
+            LogId = logId,
         };
         _messageChannel.Writer.TryWrite(msg);
         return msg.Id;
