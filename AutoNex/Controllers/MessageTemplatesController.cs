@@ -20,9 +20,9 @@ public class MessageTemplatesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] string? search, CancellationToken cancellationToken)
     {
-        var templates = await _messageTemplateService.GetAllAsync(page, pageSize, cancellationToken);
+        var templates = await _messageTemplateService.GetAllAsync(page, pageSize, search, cancellationToken);
         return Ok(ApiResponse<PagedResponse<MessageTemplateResponse>>.Ok(templates));
     }
 

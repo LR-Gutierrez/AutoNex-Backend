@@ -17,9 +17,17 @@ public class MessageTemplateService : IMessageTemplateService
         _context = context;
     }
 
-    public async Task<PagedResponse<MessageTemplateResponse>> GetAllAsync(int? page, int? pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<MessageTemplateResponse>> GetAllAsync(int? page, int? pageSize, string? search = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.MessageTemplates.AsNoTracking().OrderBy(t => t.Key);
+        IQueryable<MessageTemplate> query = _context.MessageTemplates.AsNoTracking().OrderBy(t => t.Key);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(t => t.Key.ToLower().Contains(term)
+                || (t.Description != null && t.Description.ToLower().Contains(term)));
+        }
+
         return await query.ToPagedResponseAsync(page, pageSize, t => t.ToResponse(), cancellationToken);
     }
 
