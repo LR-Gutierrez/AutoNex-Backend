@@ -24,6 +24,10 @@ public class MessageTemplateConfiguration : IEntityTypeConfiguration<MessageTemp
         builder.Property(t => t.Description)
             .HasColumnName("description");
 
+        builder.Property(t => t.IsActive)
+            .HasColumnName("is_active")
+            .HasDefaultValue(false);
+
         builder.Property(t => t.CreatedAt)
             .HasColumnName("created_at");
 
@@ -31,5 +35,9 @@ public class MessageTemplateConfiguration : IEntityTypeConfiguration<MessageTemp
             .HasColumnName("updated_at");
 
         builder.HasIndex(t => t.Key).IsUnique();
+
+        builder.HasIndex(t => t.IsActive)
+            .IsUnique()
+            .HasFilter("\"is_active\" = true");
     }
 }

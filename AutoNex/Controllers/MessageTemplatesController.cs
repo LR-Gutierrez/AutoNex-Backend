@@ -80,4 +80,15 @@ public class MessageTemplatesController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("{id}/activate")]
+    public async Task<IActionResult> Activate(int id, CancellationToken cancellationToken)
+    {
+        var success = await _messageTemplateService.SetActiveAsync(id, cancellationToken);
+        if (!success)
+            return NotFound(ApiResponse<object>.Fail("Template no encontrado"));
+
+        var template = await _messageTemplateService.GetByIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<MessageTemplateResponse>.Ok(template!, "Template activado exitosamente"));
+    }
 }

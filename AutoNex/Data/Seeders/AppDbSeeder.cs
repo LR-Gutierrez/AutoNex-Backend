@@ -100,7 +100,8 @@ public static class AppDbSeeder
             {
                 Key = "mileage_alert_reminder",
                 Template = "🚗 {WorkshopName} | Tu asistente de confianza\nHola {ClientName}!! esperamos que estés teniendo un buen día 😊\n\nQueremos recordarte que tu vehículo ({Brand} {Model} - {LicensePlate}) está próximo a su mantenimiento de {ServiceName}.\n\nAtenderlo a tiempo te ayudará a mantenerlo en óptimas condiciones y evitar contratiempos.\n\n{WorkshopAddress}\n{WorkshopPhone}",
-                Description = "Template para recordatorios de alertas de kilometraje"
+                Description = "Template para recordatorios de alertas de kilometraje",
+                IsActive = true
             });
 
             await db.SaveChangesAsync();

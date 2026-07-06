@@ -35,6 +35,12 @@ public class MessageTemplateService : IMessageTemplateService
         return template?.ToResponse();
     }
 
+    public async Task<MessageTemplateResponse?> GetActiveAsync(CancellationToken cancellationToken = default)
+    {
+        var template = await _context.MessageTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.IsActive, cancellationToken);
+        return template?.ToResponse();
+    }
+
     public async Task<MessageTemplateResponse> CreateAsync(CreateMessageTemplateRequest request, CancellationToken cancellationToken = default)
     {
         var exists = await _context.MessageTemplates.AnyAsync(t => t.Key == request.Key, cancellationToken);
@@ -73,6 +79,21 @@ public class MessageTemplateService : IMessageTemplateService
         if (template is null) return false;
 
         _context.MessageTemplates.Remove(template);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> SetActiveAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var template = await _context.MessageTemplates.FindAsync(new object[] { id }, cancellationToken);
+        if (template is null) return false;
+
+        await _context.MessageTemplates
+            .Where(t => t.IsActive)
+            .ExecuteUpdateAsync(setter => setter.SetProperty(t => t.IsActive, false), cancellationToken);
+
+        template.IsActive = true;
+        template.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }

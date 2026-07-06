@@ -216,6 +216,7 @@ public static class MappingExtensions
             Key = template.Key,
             Template = template.Template,
             Description = template.Description,
+            IsActive = template.IsActive,
             CreatedAt = template.CreatedAt,
             UpdatedAt = template.UpdatedAt
         };

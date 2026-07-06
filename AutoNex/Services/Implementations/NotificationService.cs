@@ -249,7 +249,7 @@ public class NotificationService : INotificationService
 
     private async Task<string> BuildMessageAsync(MileageAlert alert, int currentKm, string vehicleInfo, CancellationToken cancellationToken)
     {
-        var template = await _templateService.GetByKeyAsync("mileage_alert_reminder", cancellationToken);
+        var template = await _templateService.GetActiveAsync(cancellationToken);
 
         var workshop = await _workshopInfoService.GetAsync(cancellationToken);
 
