@@ -22,8 +22,26 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    defaultConnection = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+else
+{
+    var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+    if (!string.IsNullOrEmpty(pgHost))
+    {
+        defaultConnection = $"Host={pgHost};Port={Environment.GetEnvironmentVariable("PGPORT") ?? "5432"};Database={Environment.GetEnvironmentVariable("PGDATABASE") ?? "autonex"};Username={Environment.GetEnvironmentVariable("PGUSER") ?? "autonex_user"};Password={Environment.GetEnvironmentVariable("PGPASSWORD") ?? ""};SSL Mode=Require;Trust Server Certificate=true";
+    }
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(defaultConnection));
 
 builder.Services.AddCors(options =>
 {
