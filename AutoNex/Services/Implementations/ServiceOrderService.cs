@@ -311,9 +311,12 @@ public class ServiceOrderService : IServiceOrderService
             amountInBs = request.AmountInBs;
         }
 
-        var accountType = request.PaymentMethod is PaymentMethod.EfectivoDolares
-            ? AccountType.Dolares
-            : AccountType.Bolivares;
+        var accountType = request.PaymentMethod switch
+        {
+            PaymentMethod.EfectivoDolares => AccountType.Dolares,
+            PaymentMethod.Gratis => AccountType.Bolivares,
+            _ => AccountType.Bolivares,
+        };
 
         var record = new FinancialRecord
         {

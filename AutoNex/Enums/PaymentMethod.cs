@@ -5,5 +5,6 @@ public enum PaymentMethod
     PagoMovil,
     Transferencia,
     EfectivoDolares,
-    EfectivoBolivares
+    EfectivoBolivares,
+    Gratis
 }

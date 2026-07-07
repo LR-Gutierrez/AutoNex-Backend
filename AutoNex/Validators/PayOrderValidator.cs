@@ -30,5 +30,12 @@ public class PayOrderValidator : AbstractValidator<PayOrderRequest>
                 .NotNull().WithMessage("El monto en bolívares es obligatorio para pagos en efectivo Bs")
                 .GreaterThan(0).WithMessage("El monto en bolívares debe ser mayor a 0");
         });
+
+        When(x => x.PaymentMethod == PaymentMethod.Gratis, () =>
+        {
+            RuleFor(x => x.AmountInBs)
+                .Equal(0).When(x => x.AmountInBs is not null)
+                .WithMessage("El monto debe ser 0 para pagos gratis");
+        });
     }
 }
