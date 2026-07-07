@@ -253,6 +253,7 @@ app.MapHub<DashboardHub>("/hubs/dashboard");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapHub<ExchangeRateHub>("/hubs/exchange-rates");
 app.MapHub<WhatsAppHub>("/hubs/whatsapp");
+app.MapHub<MonitorHub>("/hubs/monitor");
 app.MapHealthChecks("/health");
 
 app.Run();
