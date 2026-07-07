@@ -8,6 +8,8 @@ public class SeedSettings
     public List<SeedToolCategory> ToolCategories { get; init; } = [];
     public List<SeedSupplier> Suppliers { get; init; } = [];
     public List<SeedCurrency> Currencies { get; init; } = [];
+    public List<SeedMessageTemplate> MessageTemplates { get; init; } = [];
+    public SeedWorkshopInfo? WorkshopInfo { get; init; }
     public List<SeedSettingItem> Settings { get; init; } = [];
 }
 
@@ -49,6 +51,28 @@ public class SeedCurrency
     public string Name { get; init; } = string.Empty;
     public string Symbol { get; init; } = string.Empty;
     public bool IsPrincipal { get; init; }
+}
+
+public class SeedMessageTemplate
+{
+    public string Key { get; init; } = string.Empty;
+    public string Template { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public bool IsActive { get; init; }
+}
+
+public class SeedWorkshopInfo
+{
+    public string BusinessName { get; init; } = string.Empty;
+    public string? Rif { get; init; }
+    public string? Address { get; init; }
+    public string? City { get; init; }
+    public string? MapsUrl { get; init; }
+    public string? Phone { get; init; }
+    public string? SecondaryPhone { get; init; }
+    public string? Email { get; init; }
+    public string? Website { get; init; }
+    public string? OpeningHours { get; init; }
 }
 
 public class SeedSettingItem

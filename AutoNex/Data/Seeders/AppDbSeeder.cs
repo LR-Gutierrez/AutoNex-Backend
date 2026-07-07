@@ -46,9 +46,9 @@ public static class AppDbSeeder
 
         if (settings.ToolCategories.Count > 0)
         {
-            var existingNames = await db.ToolCategories.Select(tc => tc.Name).ToListAsync();
+            var existingToolCategoryNames = await db.ToolCategories.Select(tc => tc.Name).ToListAsync();
             var newCategories = settings.ToolCategories
-                .Where(tc => !existingNames.Contains(tc.Name))
+                .Where(tc => !existingToolCategoryNames.Contains(tc.Name))
                 .Select(tc => new ToolCategory { Name = tc.Name })
                 .ToList();
 
@@ -94,14 +94,34 @@ public static class AppDbSeeder
             }
         }
 
-        if (!await db.MessageTemplates.AnyAsync())
+        if (!await db.MessageTemplates.AnyAsync() && settings.MessageTemplates.Count > 0)
         {
-            db.MessageTemplates.Add(new MessageTemplate
+            db.MessageTemplates.AddRange(settings.MessageTemplates.Select(mt => new MessageTemplate
             {
-                Key = "mileage_alert_reminder",
-                Template = "🚗 {WorkshopName} | Tu asistente de confianza\nHola {ClientName}!! esperamos que estés teniendo un buen día 😊\n\nQueremos recordarte que tu vehículo ({Brand} {Model} - {LicensePlate}) está próximo a su mantenimiento de {ServiceName}.\n\nAtenderlo a tiempo te ayudará a mantenerlo en óptimas condiciones y evitar contratiempos.\n\n{WorkshopAddress}\n{WorkshopPhone}",
-                Description = "Template para recordatorios de alertas de kilometraje",
-                IsActive = true
+                Key = mt.Key,
+                Template = mt.Template,
+                Description = mt.Description,
+                IsActive = mt.IsActive
+            }));
+
+            await db.SaveChangesAsync();
+        }
+
+        if (settings.WorkshopInfo is not null && !await db.WorkshopInfos.AnyAsync())
+        {
+            var w = settings.WorkshopInfo;
+            db.WorkshopInfos.Add(new WorkshopInfo
+            {
+                BusinessName = w.BusinessName,
+                Rif = w.Rif,
+                Address = w.Address,
+                City = w.City,
+                MapsUrl = w.MapsUrl,
+                Phone = w.Phone,
+                SecondaryPhone = w.SecondaryPhone,
+                Email = w.Email,
+                Website = w.Website,
+                OpeningHours = w.OpeningHours
             });
 
             await db.SaveChangesAsync();
