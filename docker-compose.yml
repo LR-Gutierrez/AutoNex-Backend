@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: autonex
+      POSTGRES_USER: autonex
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-autonex_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autonex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./AutoNex
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:5212
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=autonex;Username=autonex;Password=${DB_PASSWORD:-autonex_secret}"
+      Jwt__Key: ${JWT_KEY:-supersecretkeythatislongenough12345678}
+      Jwt__Issuer: AutoNex
+      Jwt__Audience: AutoNexApi
+      WaNotifier__BaseUrl: http://wa-notifier:3000/api
+      WaNotifier__ApiKey: ${WA_NOTIFIER_API_KEY:?WA_NOTIFIER_API_KEY is required}
+      WaNotifier__WebSocketSecret: ${BACKEND_WS_SECRET:-wa-notifier-ws-secret-change-me}
+    ports:
+      - "5212:5212"
+    volumes:
+      - backend_data:/app/Data
+
+  wa-notifier:
+    build:
+      context: ../wa-notifier
+      dockerfile: Dockerfile
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      API_PREFIX: api
+      JWT_SECRET: ${WA_NOTIFIER_JWT_SECRET:-w4_n0t1f13r_sup3r_s3cr3t_k3y}
+      JWT_EXPIRATION: 1h
+      BACKEND_WS_URL: http://backend:5212/hubs/whatsapp
+      BACKEND_WS_SECRET: ${BACKEND_WS_SECRET:-wa-notifier-ws-secret-change-me}
+    ports:
+      - "3000:3000"
+    volumes:
+      - wa_session:/app/wa-session
+      - wwebjs_cache:/app/.wwebjs_cache
+
+volumes:
+  postgres_data:
+  backend_data:
+  wa_session:
+  wwebjs_cache:

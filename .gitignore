@@ -46,3 +46,6 @@ bld/
 ## dotnet
 packages/
 *.nupkg
+
+## Environment
+.env
